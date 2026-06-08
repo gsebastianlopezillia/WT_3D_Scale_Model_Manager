@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WT 3D Scale Model Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js and loaders -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="brand">
+                <div class="brand-icon">✈</div>
+                <div class="brand-title">WT 3D Scale Model <span>Manager</span> <span style="font-size: 10px; font-weight: 500; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 99px; margin-left: 10px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.5px;">by Pelad0o</span></div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <!-- Language Selector Toggle -->
+                <div class="lang-selector">
+                    <button class="lang-btn active" id="lang-btn-es" onclick="setLanguage('es')">ES</button>
+                    <button class="lang-btn" id="lang-btn-en" onclick="setLanguage('en')">EN</button>
+                </div>
+
+                <div class="server-status" id="server-status-container">
+                    <div class="status-indicator" id="status-dot"></div>
+                    <span id="status-text" data-i18n="status_connected">Conectado</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main>
+            <!-- Left Sidebar: Vehicles List -->
+            <div class="sidebar">
+                <div class="search-box">
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="vehicle-search" placeholder="Buscar vehículo (ej. Bf 109)..." data-i18n-placeholder="search_placeholder">
+                    </div>
+                    <!-- Category Filter Tabs -->
+                    <div class="category-tabs">
+                        <button class="category-tab active" data-category="all" data-i18n="tab_all">Todos</button>
+                        <button class="category-tab" data-category="aircraft" data-i18n="tab_aircraft">Aviones</button>
+                        <button class="category-tab" data-category="tank" data-i18n="tab_tank">Tanques</button>
+                        <button class="category-tab" data-category="ship" data-i18n="tab_ship">Barcos</button>
+                    </div>
+                </div>
+                <div class="vehicle-list-wrapper" id="vehicle-list">
+                    <!-- Dynamic Categories & Vehicles -->
+                    <div style="padding: 20px; text-align: center; color: var(--text-muted);" data-i18n="searching_vehicles">
+                        Buscando vehículos en el equipo...
+                    </div>
+                </div>
+
+                <!-- Sidebar Footer/Contact -->
+                <div style="padding: 16px 20px; border-top: 1px solid var(--border-color); background: rgba(0, 0, 0, 0.15); font-size: 11px; text-align: center; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
+                    <div><span data-i18n="developed_by">Desarrollado por</span> <span style="color: var(--accent); font-weight: 700; letter-spacing: 0.5px;">Pelad0o</span></div>
+                    <div data-i18n="contact_hire">Contacto para contrataciones:</div>
+                    <a href="mailto:gsebastianlopezillia@gmail.com" style="color: var(--text-primary); text-decoration: none; font-weight: 600; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-primary)'">gsebastianlopezillia@gmail.com</a>
+                </div>
+            </div>
+
+            <!-- Middle Column: Parameters & Generation -->
+            <div class="control-panel">
+                <!-- Vehicle Info Header -->
+                <div class="panel-section" id="vehicle-info-section" style="display: none;">
+                    <div class="section-title" data-i18n="selected_vehicle">Vehículo Seleccionado</div>
+                    <div style="font-size: 18px; font-weight: 700;" id="info-name">-</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="info-grp">-</div>
+                    <div style="margin-top: 14px; font-size: 12px; color: var(--text-secondary);">
+                        <span data-i18n="original_dims">Dimensiones Originales (Juego):</span>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px;">
+                            <div style="background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; text-align: center;">
+                                <div style="font-size: 9px; color: var(--text-muted);" id="orig-len-label" data-i18n="dim_length">LARGO</div>
+                                <div style="font-weight: 600;" id="orig-len">-</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; text-align: center;">
+                                <div style="font-size: 9px; color: var(--text-muted);" id="orig-hgt-label" data-i18n="dim_height">ALTO</div>
+                                <div style="font-weight: 600;" id="orig-hgt">-</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; text-align: center;">
+                                <div style="font-size: 9px; color: var(--text-muted);" id="orig-span-label" data-i18n="dim_wingspan">ENVERGADURA</div>
+                                <div style="font-weight: 600;" id="orig-span">-</div>
+                            </div>                        </div>
+                    </div>
+                </div>
+
+                <!-- Scaling parameters -->
+                <div class="panel-section">
+                    <div class="section-title" data-i18n="scale_adjustment">Ajuste de Escala Física</div>
+                    
+                    <div class="form-group">
+                        <label for="scale-mode" data-i18n="scale_mode_label">Modo de Escalamiento</label>
+                        <div class="select-wrapper">
+                            <select id="scale-mode">
+                                <option value="wingspan" data-i18n="scale_mode_wingspan">Por Envergadura Objetivo (Aviones)</option>
+                                <option value="length" data-i18n="scale_mode_length">Por Longitud Objetivo (Tanques/Otros)</option>
+                                <option value="predefined" data-i18n="scale_mode_predefined">Escala Proporcional Estándar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="predefined-scale-group" style="display: none;">
+                        <label for="predefined-scale" data-i18n="scale_standard">Escala Estándar</label>
+                        <div class="select-wrapper">
+                            <select id="predefined-scale">
+                                <option value="18" data-i18n="scale_18">1:18 (Modelo grande)</option>
+                                <option value="24" data-i18n="scale_24">1:24</option>
+                                <option value="32" selected data-i18n="scale_32">1:32 (Recomendado aviones)</option>
+                                <option value="35" data-i18n="scale_35">1:35 (Recomendado tanques)</option>
+                                <option value="48" data-i18n="scale_48">1:48</option>
+                                <option value="72" data-i18n="scale_72">1:72 (Miniatura)</option>
+                                <option value="100" data-i18n="scale_100">1:100</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="custom-size-group">
+                        <label id="slider-label" for="custom-size"><span data-i18n="target_size">Tamaño Objetivo</span>: <span id="slider-val-display">900</span> mm</label>
+                        <div class="slider-container">
+                            <input type="range" id="custom-size" min="100" max="2000" step="10" value="900">
+                            <div class="slider-labels">
+                                <span>100 mm</span>
+                                <span>1000 mm</span>
+                                <span>2000 mm</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <label data-i18n="estimated_dims">Dimensiones Impresas Estimadas</label>
+                        <div class="dimension-grid">
+                            <div class="dimension-card">
+                                <div class="dimension-label" id="calc-len-label">Largo (X)</div>
+                                <div class="dimension-val" id="calc-len">-<span>mm</span></div>
+                            </div>
+                            <div class="dimension-card">
+                                <div class="dimension-label" id="calc-hgt-label">Alto (Y)</div>
+                                <div class="dimension-val" id="calc-hgt">-<span>mm</span></div>
+                            </div>
+                            <div class="dimension-card">
+                                <div class="dimension-label" id="calc-span-label">Ancho (Z)</div>
+                                <div class="dimension-val" id="calc-span">-<span>mm</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Segmentation Level -->
+                <div class="panel-section">
+                    <div class="section-title" data-i18n="segmentation_title">Segmentación de Piezas</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);" data-i18n="segmentation_desc">
+                        Ajusta el nivel de descomposición para facilitar el ensamblaje y pintura:
+                    </div>
+                    
+                    <div class="segment-levels">
+                        <div class="segment-level-option" data-level="1">
+                            <div class="level-name">Lvl 1</div>
+                            <div class="level-desc" data-i18n="segment_lvl1_desc">Decorativo (Fusión)</div>
+                        </div>
+                        <div class="segment-level-option" data-level="2">
+                            <div class="level-name">Lvl 2</div>
+                            <div class="level-desc" data-i18n="segment_lvl2_desc">Estático (Semi)</div>
+                        </div>
+                        <div class="segment-level-option active" data-level="3">
+                            <div class="level-name">Lvl 3</div>
+                            <div class="level-desc" data-i18n="segment_lvl3_desc">Funcional (Despiece)</div>
+                        </div>
+                    </div>
+                    <div class="helper-text" id="level-helper-text">
+                        Nivel 3: Separación completa de partes móviles (flaps, alerones, slats, timón, ruedas y struts individuales). Ideal para colocar electrónica o hacer articulaciones.
+                    </div>
+                </div>
+
+                <!-- Combat Damage / Alternate Parts Variant Selector -->
+                <div class="panel-section" id="variants-control-section" style="display: none;">
+                    <div class="section-title" data-i18n="variants_title">Daño de Combate y Alternativas</div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;" data-i18n="variants_desc">
+                        Selecciona con qué versión de las piezas deseas armar tu modelo (intacto vs. daño de batalla):
+                    </div>
+                    <div id="variants-container" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Dynamically filled with variants checkboxes/radios -->
+                    </div>
+                </div>
+
+                <!-- Generate Trigger Button -->
+                <button class="btn-generate" id="btn-generate" disabled>
+                    <div class="spinner" id="btn-spinner"></div>
+                    <span id="btn-text" data-i18n="btn_generate">Generar Piezas</span>
+                </button>
+            </div>
+
+            <!-- Right Column: 3D Render Area -->
+            <div class="preview-area">
+                <!-- Overlay if no model selected -->
+                <div class="no-model-overlay" id="no-model-overlay">
+                    <div class="overlay-title" data-i18n="view_interactive_title">Visualizador 3D Interactivo</div>
+                    <div class="overlay-desc" data-i18n="view_interactive_desc">
+                        Selecciona un vehículo de la lista lateral para cargar una previsualización 3D interactiva en tiempo real. Podrás ajustar la escala y ver el despiece antes de exportar los archivos .obj definitivos.
+                    </div>
+                </div>
+
+                <!-- Loading Overlay -->
+                <div class="model-loading-overlay" id="model-loading-overlay">
+                    <div class="loading-spinner-container">
+                        <div class="spinner-premium"></div>
+                        <div class="loading-text" id="model-loading-text" data-i18n="loading_model">Cargando modelo... (0%)</div>
+                    </div>
+                </div>
+
+                <!-- Three.js Container -->
+                <div id="canvas-container"></div>
+
+                <!-- Interactive Assembly controls -->
+                <div class="viewport-controls" id="exploded-controls-panel" style="display: none;">
+                    <div class="viewport-panel">
+                        <label for="exploded-slider"><span data-i18n="explode_label">Despiece ("Explode View")</span>: <span id="explode-display">0</span>%</label>
+                        <input type="range" id="exploded-slider" min="0" max="100" value="0">
+                        <div class="slider-labels">
+                            <span data-i18n="explode_assembled">Ensamblado</span>
+                            <span data-i18n="explode_expanded">Expandido</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loaded Parts Sidebar -->
+                <div class="parts-panel" id="parts-panel" style="display: none;">
+                    <div class="parts-header">
+                        <span id="parts-header-title" data-i18n="parts_estimated">Despiece Estimado</span>
+                        <span style="font-size: 11px; color: var(--accent-secondary);" id="parts-count">0</span>
+                    </div>
+                    <div class="parts-list" id="parts-list-container">
+                        <!-- Dynamic list of parts -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script Application Logic -->
+    <script>
+        const LANGUAGES = {
+            es: {
+                tab_all: "Todos",
+                tab_aircraft: "Aviones",
+                tab_tank: "Tanques",
+                tab_ship: "Barcos",
+                status_connected: "Servidor Conectado",
+                status_indexing: "Indexando... ({progress}/{total})",
+                search_placeholder: "Buscar vehículo (ej. Bf 109)...",
+                searching_vehicles: "Buscando vehículos en el equipo...",
+                developed_by: "Desarrollado por",
+                contact_hire: "Contacto para contrataciones:",
+                selected_vehicle: "Vehículo Seleccionado",
+                original_dims: "Dimensiones Originales (Juego):",
+                dim_length: "LARGO",
+                dim_height: "ALTO",
+                dim_wingspan: "ENVERGADURA",
+                dim_eslora: "ESLORA",
+                dim_manga: "MANGA",
+                dim_puntal: "PUNTAL",
+                dim_width: "ANCHO",
+                scale_adjustment: "Ajuste de Escala Física",
+                scale_mode_label: "Modo de Escalamiento",
+                scale_mode_wingspan_aircraft: "Por Envergadura Objetivo (Aviones)",
+                scale_mode_length_aircraft: "Por Longitud Objetivo (Largo)",
+                scale_mode_predefined: "Escala Proporcional Estándar",
+                scale_mode_length_tank: "Por Longitud Objetivo (Largo)",
+                scale_mode_wingspan_tank: "Por Ancho Objetivo",
+                scale_mode_length_ship: "Por Eslora Objetivo (Largo)",
+                scale_mode_wingspan_ship: "Por Manga Objetivo (Ancho)",
+                scale_standard: "Escala Estándar",
+                target_size: "Tamaño Objetivo",
+                estimated_dims: "Dimensiones Impresas Estimadas",
+                segmentation_title: "Segmentación de Piezas",
+                segmentation_desc: "Ajusta el nivel de descomposición para facilitar el ensamblaje y pintura:",
+                segment_lvl1_desc: "Decorativo (Fusión)",
+                segment_lvl2_desc: "Estático (Semi)",
+                segment_lvl3_desc: "Funcional (Despiece)",
+                variants_title: "Daño de Combate y Alternativas",
+                variants_desc: "Selecciona con qué versión de las piezas deseas armar tu modelo (intacto vs. daño de batalla):",
+                btn_generate: "Generar Piezas",
+                btn_generating: "Generando piezas...",
+                view_interactive_title: "Visualizador 3D Interactivo",
+                view_interactive_desc: "Selecciona un vehículo de la lista lateral para cargar una previsualización 3D interactiva en tiempo real. Podrás ajustar la escala y ver el despiece antes de exportar los archivos .obj definitivos.",
+                explode_label: "Despiece (\"Explode View\")",
+                explode_assembled: "Ensamblado",
+                explode_expanded: "Expandido",
+                loading_model: "Cargando modelo...",
+                downloading_3d: "Descargando malla 3D...",
+                error_loading_3d: "Error cargando preview 3D",
+                aircraft_title: "Aeronaves (Aviones/Helis)",
+                tank_title: "Vehículos Terrestres (Tanques)",
+                ship_title: "Fuerzas Navales (Barcos/Buques)",
+                other_title: "Otros",
+                badge_aircraft: "Avión",
+                badge_tank: "Tanque",
+                badge_ship: "Barco",
+                badge_other: "Otros",
+                no_vehicles_found: "No se encontraron vehículos.",
+                error_backend: "Error de conexión con el backend",
+                loading_details: "cargando...",
+                error_details_failed: "Error cargando detalles del modelo: ",
+                error_generate_failed: "Error en la generación: ",
+                generate_success: "¡Piezas físicas escritas con éxito en el disco! Ya puedes descargarlas.",
+                error_connect: "Ocurrió un error al conectar con el servidor.",
+                parts_estimated: "Despiece Estimado",
+                parts_generated: "Piezas Generadas",
+                part_preview: "VISTA PREVIA",
+                part_download: "DESCARGAR",
+                parts_count_suffix_pieces: "piezas",
+                parts_count_suffix_files: "archivos",
+                variant_intact: "Intacta",
+                variant_damaged: "Daño Batalla",
+                helper_lvl1_aircraft: "Nivel 1: Fusiona al máximo posible las piezas. Genera un cuerpo sólido central, cabina, hélice y trenes de aterrizaje en bloques compactos. Ideal para impresiones decorativas rápidas.",
+                helper_lvl2_aircraft: "Nivel 2: Mantiene las alas y superficies integradas, pero separa la hélice, cabina, ruedas y struts de forma independiente. Buen equilibrio entre facilidad de impresión y detalle.",
+                helper_lvl3_aircraft: "Nivel 3: Separación completa de partes móviles (flaps, alerones, slats, timón, ruedas y struts individuales). Ideal para colocar electrónica o hacer articulaciones.",
+                helper_lvl1_tank: "Nivel 1: Fusiona el chasis, torreta y orugas en un solo bloque sólido. Ideal para miniaturas decorativas rápidas sin ensamblaje.",
+                helper_lvl2_tank: "Nivel 2: Separa los componentes principales (torreta, chasis, cañón y las dos orugas como bandas completas). Buen equilibrio para pintar y ensamblar.",
+                helper_lvl3_tank: "Nivel 3: Separación completa de escotillas, cañón, ruedas de rodadura e incluso eslabones de oruga individuales (si el modelo lo soporta) para ensamble pieza por pieza.",
+                helper_lvl1_ship: "Nivel 1: Fusiona el casco, superestructura y torretas en un solo bloque sólido. Ideal para maquetas navales pequeñas/rápidas.",
+                helper_lvl2_ship: "Nivel 2: Separa el casco principal de las superestructuras, mástiles y torretas principales. Equilibrio ideal para pintar y ensamblar.",
+                helper_lvl3_ship: "Nivel 3: Separación completa de torretas secundarias, cañones antiaéreos, hélices de propulsión, timones, grúas y radares. Máximo detalle y funcionalidad.",
+                
+                // Group Names (ES)
+                body: "Cuerpo Principal",
+                propeller: "Hélice",
+                canopy: "Cabina / Cúpula",
+                landing_gear_left: "Tren de Aterrizaje Izquierdo",
+                landing_gear_right: "Tren de Aterrizaje Derecho",
+                landing_gear_tail: "Tren de Aterrizaje de Cola",
+                fuselage: "Fuselaje",
+                wing_left: "Ala Izquierda",
+                wing_right: "Ala Derecha",
+                rudder: "Timón de Dirección",
+                elevator_left: "Timón de Profundidad Izquierdo",
+                elevator_right: "Timón de Profundidad Derecho",
+                gear_strut_left: "Soporte de Tren Izquierdo",
+                gear_wheel_left: "Rueda de Tren Izquierda",
+                gear_strut_right: "Soporte de Tren Derecho",
+                gear_wheel_right: "Rueda de Tren Derecha",
+                gear_strut_tail: "Soporte de Tren Trasero",
+                gear_wheel_tail: "Rueda de Tren Trasera",
+                payload: "Cargas de Combate (Bombas/Cohetes)",
+                scale_mode_wingspan: "Por Envergadura Objetivo (Aviones)",
+                scale_mode_length: "Por Longitud Objetivo (Tanques/Otros)",
+                scale_18: "1:18 (Modelo grande)",
+                scale_24: "1:24",
+                scale_32: "1:32 (Recomendado aviones)",
+                scale_35: "1:35 (Recomendado tanques)",
+                scale_48: "1:48",
+                scale_72: "1:72 (Miniatura)",
+                scale_100: "1:100"
+            },
+            en: {
+                tab_all: "All",
+                tab_aircraft: "Aircraft",
+                tab_tank: "Tanks",
+                tab_ship: "Ships",
+                status_connected: "Server Connected",
+                status_indexing: "Indexing... ({progress}/{total})",
+                search_placeholder: "Search vehicle (e.g. Bf 109)...",
+                searching_vehicles: "Searching vehicles on the system...",
+                developed_by: "Developed by",
+                contact_hire: "Contact for hire:",
+                selected_vehicle: "Selected Vehicle",
+                original_dims: "Original Dimensions (In-Game):",
+                dim_length: "LENGTH",
+                dim_height: "HEIGHT",
+                dim_wingspan: "WINGSPAN",
+                dim_eslora: "LENGTH (ESLORA)",
+                dim_manga: "BEAM (MANGA)",
+                dim_puntal: "DRAFT (PUNTAL)",
+                dim_width: "WIDTH",
+                scale_adjustment: "Physical Scale Adjustment",
+                scale_mode_label: "Scaling Mode",
+                scale_mode_wingspan_aircraft: "By Target Wingspan (Aircraft)",
+                scale_mode_length_aircraft: "By Target Length",
+                scale_mode_predefined: "Standard Proportional Scale",
+                scale_mode_length_tank: "By Target Length",
+                scale_mode_wingspan_tank: "By Target Width",
+                scale_mode_length_ship: "By Target Length (Eslora)",
+                scale_mode_wingspan_ship: "By Target Beam (Manga)",
+                scale_standard: "Standard Scale",
+                target_size: "Target Size",
+                estimated_dims: "Estimated Printed Dimensions",
+                segmentation_title: "Part Segmentation",
+                segmentation_desc: "Adjust breakdown level to ease assembly and painting:",
+                segment_lvl1_desc: "Decorative (Fused)",
+                segment_lvl2_desc: "Static (Semi)",
+                segment_lvl3_desc: "Functional (Exploded)",
+                variants_title: "Combat Damage & Alternatives",
+                variants_desc: "Select which part variant to build your model with (intact vs. battle damage):",
+                btn_generate: "Generate Parts",
+                btn_generating: "Generating parts...",
+                view_interactive_title: "Interactive 3D Viewport",
+                view_interactive_desc: "Select a vehicle from the sidebar list to load a real-time interactive 3D preview. You can adjust the scale and view the exploded assembly before exporting the final .obj files.",
+                explode_label: "Explode View",
+                explode_assembled: "Assembled",
+                explode_expanded: "Expanded",
+                loading_model: "Loading model...",
+                downloading_3d: "Downloading 3D mesh...",
+                error_loading_3d: "Error loading 3D preview",
+                aircraft_title: "Aircraft (Planes/Helis)",
+                tank_title: "Ground Vehicles (Tanks)",
+                ship_title: "Naval Forces (Ships/Boats)",
+                other_title: "Other",
+                badge_aircraft: "Aircraft",
+                badge_tank: "Tank",
+                badge_ship: "Ship",
+                badge_other: "Other",
+                no_vehicles_found: "No vehicles found.",
+                error_backend: "Connection error with backend",
+                loading_details: "loading...",
+                error_details_failed: "Error loading model details: ",
+                error_generate_failed: "Generation error: ",
+                generate_success: "Physical parts successfully written to disk! You can now download them.",
+                error_connect: "An error occurred connecting to the server.",
+                parts_estimated: "Estimated Parts",
+                parts_generated: "Generated Parts",
+                part_preview: "PREVIEW",
+                part_download: "DOWNLOAD",
+                parts_count_suffix_pieces: "pieces",
+                parts_count_suffix_files: "files",
+                variant_intact: "Intact",
+                variant_damaged: "Battle Damage",
+                helper_lvl1_aircraft: "Level 1: Fuses parts as much as possible. Generates a solid core body, canopy, propeller and landing gears in compact blocks. Ideal for quick decorative prints.",
+                helper_lvl2_aircraft: "Level 2: Keeps wings and control surfaces integrated, but separates the propeller, canopy, wheels and struts independently. Good balance between ease of printing and detail.",
+                helper_lvl3_aircraft: "Level 3: Full separation of moving parts (flaps, ailerons, slats, rudder, individual wheels and struts). Ideal for adding electronics or movable joints.",
+                helper_lvl1_tank: "Level 1: Fuses hull, turret and tracks into a single solid block. Ideal for quick decorative miniatures without assembly.",
+                helper_lvl2_tank: "Level 2: Separates main components (turret, hull, barrel and the two tracks as complete bands). Good balance for painting and assembly.",
+                helper_lvl3_tank: "Level 3: Full separation of hatches, barrel, road wheels and even individual track links (if supported) for piece-by-piece assembly.",
+                helper_lvl1_ship: "Level 1: Fuses hull, superstructure and turrets into a single solid block. Ideal for small/quick naval models.",
+                helper_lvl2_ship: "Level 2: Separates the main hull from superstructures, masts and main turrets. Ideal balance for painting and assembly.",
+                helper_lvl3_ship: "Level 3: Full separation of secondary turrets, anti-aircraft guns, propulsion propellers, rudders, cranes and radars. Maximum detail and functionality.",
+                
+                // Group Names (EN)
+                body: "Main Body",
+                propeller: "Propeller",
+                canopy: "Canopy / Cockpit",
+                landing_gear_left: "Left Landing Gear",
+                landing_gear_right: "Right Landing Gear",
+                landing_gear_tail: "Tail Landing Gear",
+                fuselage: "Fuselage",
+                wing_left: "Left Wing",
+                wing_right: "Right Wing",
+                rudder: "Rudder",
+                elevator_left: "Left Elevator",
+                elevator_right: "Right Elevator",
+                gear_strut_left: "Left Gear Strut",
+                gear_wheel_left: "Left Gear Wheel",
+                gear_strut_right: "Right Gear Strut",
+                gear_wheel_right: "Right Gear Wheel",
+                gear_strut_tail: "Tail Gear Strut",
+                gear_wheel_tail: "Tail Gear Wheel",
+                payload: "Payload (Bombs/Rockets)",
+                scale_mode_wingspan: "By Target Wingspan (Aircraft)",
+                scale_mode_length: "By Target Length (Tanks/Others)",
+                scale_18: "1:18 (Large model)",
+                scale_24: "1:24",
+                scale_32: "1:32 (Recommended aircraft)",
+                scale_35: "1:35 (Recommended armor/tanks)",
+                scale_48: "1:48",
+                scale_72: "1:72 (Miniature)",
+                scale_100: "1:100"
+            }
+        };
+
+        let currentLang = 'es';
+
+        function setLanguage(lang) {
+            if (!LANGUAGES[lang]) return;
+            currentLang = lang;
+            localStorage.setItem('preferred_lang', lang);
+            
+            // Toggle active classes on buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.id === `lang-btn-${lang}`) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Translate static elements with data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (LANGUAGES[lang][key]) {
+                    el.innerText = LANGUAGES[lang][key];
+                }
+            });
+            
+            // Translate placeholders with data-i18n-placeholder
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (LANGUAGES[lang][key]) {
+                    el.placeholder = LANGUAGES[lang][key];
+                }
+            });
+            
+            // Re-render elements that depend on language
+            if (vehiclesList.length > 0) {
+                filterVehicles();
+            }
+            
+            // Always update levels helper text (defaults to aircraft if no vehicle selected)
+            updateLevelHelperText();
+            
+            if (generatedFiles) {
+                renderDownloadPartsList(generatedFiles, generatedGroupsMap);
+            } else if (partMeshes.length > 0) {
+                applySegmentation();
+            }
+            
+            if (currentVehicle) {
+                const vObj = vehiclesList.find(v => v.name === currentVehicle.name);
+                const category = vObj ? vObj.category : 'aircraft';
+                
+                // Re-evaluate scale options, labels, levels helper
+                updateScaleModeOptions(category);
+                
+                // If model details are loaded, update dimensions
+                if (vehicleDetails) {
+                    document.getElementById('orig-len').innerText = `${vehicleDetails.length.toFixed(2)} m`;
+                    document.getElementById('orig-hgt').innerText = `${vehicleDetails.height.toFixed(2)} m`;
+                    document.getElementById('orig-span').innerText = `${vehicleDetails.wingspan.toFixed(2)} m`;
+                    updateScaledDimensions();
+                }
+                
+                if (Object.keys(vehicleVariants).length > 0) {
+                    renderVariantsPanel(vehicleVariants);
+                }
+            } else {
+                // Default fallback label names when no vehicle is selected
+                updateLabelsAndTitles('aircraft');
+            }
+        }
+
+        let currentVehicle = null;
+        let vehicleDetails = null;
+        let selectedLevel = 3;
+        let vehiclesList = [];
+        let generatedFiles = null;
+        let generatedGroupsMap = null;
+        
+        // Three.js Global Variables
+        let scene, camera, renderer, controls;
+        let partsGroup = new THREE.Group();
+        let partMeshes = []; // Store references to meshes, their original positions, and colors
+        let modelMaxDim = 1.0; // Global variable to store the maximum dimension of the loaded vehicle model
+        let isCurrentVehicleTank = false; // Check if current selected vehicle is a tank
+        let activeExcludedParts = []; // Global list of technically excluded part names
+        let vehicleVariants = {}; // baseName -> [originalNames...]
+        
+        // Colors for color-coding parts
+        const PART_COLORS = [
+            0x7c3aed, // Purple
+            0x06b6d4, // Cyan
+            0x10b981, // Green
+            0xf59e0b, // Amber
+            0x3b82f6, // Blue
+            0xec4899, // Pink
+            0x14b8a6, // Teal
+            0x84cc16, // Lime
+            0x6366f1, // Indigo
+            0xef4444, // Red
+            0x64748b, // Slate
+            0xa855f7  // Purple-light
+        ];
+
+        // Classification rules matching python server
+        function classifyGroupsJS(rawGroups, level) {
+            const groupsMap = {};
+            if (level === 1) {
+                const propeller = [];
+                const canopy = [];
+                const left_gear = [];
+                const right_gear = [];
+                const tail_gear = [];
+                const body = [];
+                
+                rawGroups.forEach(g => {
+                    const gl = g.toLowerCase();
+                    if (gl.includes('prop') || gl.includes('spinner')) propeller.push(g);
+                    else if (gl.includes('blister') || gl.includes('canopy') || gl.includes('glass')) canopy.push(g);
+                    else if (gl.includes('gear_l') || gl.includes('wheel_l')) left_gear.push(g);
+                    else if (gl.includes('gear_r') || gl.includes('wheel_r')) right_gear.push(g);
+                    else if (gl.includes('gear_c') || gl.includes('wheel_c')) tail_gear.push(g);
+                    else body.push(g);
+                });
+                
+                if (body.length) groupsMap['body'] = body;
+                if (propeller.length) groupsMap['propeller'] = propeller;
+                if (canopy.length) groupsMap['canopy'] = canopy;
+                if (left_gear.length) groupsMap['landing_gear_left'] = left_gear;
+                if (right_gear.length) groupsMap['landing_gear_right'] = right_gear;
+                if (tail_gear.length) groupsMap['landing_gear_tail'] = tail_gear;
+                
+            } else if (level === 2) {
+                const fuselage = [];
+                const wing_left = [];
+                const wing_right = [];
+                const rudder = [];
+                const elevator_left = [];
+                const elevator_right = [];
+                const propeller = [];
+                const canopy = [];
+                const gear_strut_left = [];
+                const gear_wheel_left = [];
+                const gear_strut_right = [];
+                const gear_wheel_right = [];
+                const gear_strut_tail = [];
+                const gear_wheel_tail = [];
+                const weapons = [];
+                const launchers = [];
+                const payload = [];
+                
+                rawGroups.forEach(g => {
+                    const gl = g.toLowerCase();
+                    if (gl.includes('prop') || gl.includes('spinner')) propeller.push(g);
+                    else if (gl.includes('blister') || gl.includes('canopy') || gl.includes('glass')) canopy.push(g);
+                    else if (gl.includes('wheel_l')) gear_wheel_left.push(g);
+                    else if (gl.includes('gear_l')) gear_strut_left.push(g);
+                    else if (gl.includes('wheel_r')) gear_wheel_right.push(g);
+                    else if (gl.includes('gear_r')) gear_strut_right.push(g);
+                    else if (gl.includes('wheel_c')) gear_wheel_tail.push(g);
+                    else if (gl.includes('gear_c')) gear_strut_tail.push(g);
+                    else if (gl.includes('rudder')) rudder.push(g);
+                    else if (gl.includes('elevator0') || gl.includes('elevator_l')) elevator_left.push(g);
+                    else if (gl.includes('elevator1') || gl.includes('elevator_r')) elevator_right.push(g);
+                    else if (gl.includes('wing_l') || gl.includes('flap_l') || gl.includes('flap1_l') || gl.includes('flap2_l') || gl.includes('aileron_l') || gl.includes('slat_l') || gl.includes('radiator1') || gl.includes('radiator_left')) wing_left.push(g);
+                    else if (gl.includes('wing_r') || gl.includes('flap_r') || gl.includes('flap1_r') || gl.includes('flap2_r') || gl.includes('aileron_r') || gl.includes('slat_r') || gl.includes('radiator2') || gl.includes('radiator_right')) wing_right.push(g);
+                    else if (['pylon', 'launcher', 'rack', 'pod', 'tube'].some(k => gl.includes(k)) && !gl.includes('track')) launchers.push(g);
+                    else if (['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak'].some(k => gl.includes(k))) weapons.push(g);
+                    else if (['bomb', 'rocket', 'missile', 'torpedo', '210mm'].some(k => gl.includes(k))) payload.push(g);
+                    else fuselage.push(g);
+                });
+                
+                if (fuselage.length) groupsMap['fuselage'] = fuselage;
+                if (wing_left.length) groupsMap['wing_left'] = wing_left;
+                if (wing_right.length) groupsMap['wing_right'] = wing_right;
+                if (rudder.length) groupsMap['rudder'] = rudder;
+                if (elevator_left.length) groupsMap['elevator_left'] = elevator_left;
+                if (elevator_right.length) groupsMap['elevator_right'] = elevator_right;
+                if (propeller.length) groupsMap['propeller'] = propeller;
+                if (canopy.length) groupsMap['canopy'] = canopy;
+                if (gear_strut_left.length) groupsMap['gear_strut_left'] = gear_strut_left;
+                if (gear_wheel_left.length) groupsMap['gear_wheel_left'] = gear_wheel_left;
+                if (gear_strut_right.length) groupsMap['gear_strut_right'] = gear_strut_right;
+                if (gear_wheel_right.length) groupsMap['gear_wheel_right'] = gear_wheel_right;
+                if (gear_strut_tail.length) groupsMap['gear_strut_tail'] = gear_strut_tail;
+                if (gear_wheel_tail.length) groupsMap['gear_wheel_tail'] = gear_wheel_tail;
+                if (weapons.length) groupsMap['weapons'] = weapons;
+                if (launchers.length) groupsMap['launchers'] = launchers;
+                if (payload.length) groupsMap['payload'] = payload;
+                
+            } else {
+                rawGroups.forEach(g => {
+                    const cleanName = g.replace(/ /g, '_').replace(/:/g, '_');
+                    groupsMap[cleanName] = [g];
+                });
+            }
+            return groupsMap;
+        }
+
+        // Fetch vehicles list from API
+        async function fetchVehicles() {
+            try {
+                const res = await fetch('/api/vehicles');
+                const data = await res.json();
+                
+                // Show status
+                const dot = document.getElementById('status-dot');
+                const text = document.getElementById('status-text');
+                
+                if (data.indexing) {
+                    dot.className = 'status-indicator loading';
+                    text.innerText = LANGUAGES[currentLang]['status_indexing'].replace('{progress}', data.progress).replace('{total}', data.total);
+                    // Poll again soon
+                    setTimeout(fetchVehicles, 1000);
+                } else {
+                    dot.className = 'status-indicator';
+                    text.innerText = LANGUAGES[currentLang]['status_connected'];
+                }
+                
+                vehiclesList = data.vehicles;
+                filterVehicles();
+            } catch (err) {
+                console.error("Error fetching vehicles:", err);
+                document.getElementById('vehicle-list').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--error);">
+                        ${LANGUAGES[currentLang]['error_backend']}
+                    </div>
+                `;
+            }
+        }
+
+        // Render Vehicle List DOM
+        function renderVehicleList(vehicles) {
+            const container = document.getElementById('vehicle-list');
+            if (vehicles.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                        ${LANGUAGES[currentLang]['no_vehicles_found']}
+                    </div>
+                `;
+                return;
+            }
+            
+            // Group by category
+            const categorized = {};
+            vehicles.forEach(v => {
+                if (!categorized[v.category]) {
+                    categorized[v.category] = [];
+                }
+                categorized[v.category].push(v);
+            });
+            
+            let html = '';
+            for (const cat in categorized) {
+                let title = LANGUAGES[currentLang]['other_title'];
+                let badgeClass = 'badge-aircraft';
+                let badgeText = LANGUAGES[currentLang]['badge_other'];
+                
+                if (cat === 'aircraft') {
+                    title = LANGUAGES[currentLang]['aircraft_title'];
+                    badgeClass = 'badge-aircraft';
+                    badgeText = LANGUAGES[currentLang]['badge_aircraft'];
+                } else if (cat === 'tank') {
+                    title = LANGUAGES[currentLang]['tank_title'];
+                    badgeClass = 'badge-tank';
+                    badgeText = LANGUAGES[currentLang]['badge_tank'];
+                } else if (cat === 'ship') {
+                    title = LANGUAGES[currentLang]['ship_title'];
+                    badgeClass = 'badge-ship';
+                    badgeText = LANGUAGES[currentLang]['badge_ship'];
+                }
+                
+                html += `<div class="category-title">${title}</div>`;
+                categorized[cat].forEach(v => {
+                    const isSelected = currentVehicle && currentVehicle.name === v.name ? 'active' : '';
+                    html += `
+                        <div class="vehicle-item ${isSelected}" data-name="${v.name}" onclick="selectVehicle('${v.name}', '${v.grp_path.replace(/\\/g, '\\\\')}')">
+                            <span class="vehicle-name">${v.friendly_name || v.name}</span>
+                            <span class="vehicle-badge ${badgeClass}">${badgeText}</span>
+                            <span class="vehicle-grp">${v.grp_path.split('\\').pop()}</span>
+                        </div>
+                    `;
+                });
+            }
+            container.innerHTML = html;
+        }
+
+        // Filter vehicles by category and search query
+        let selectedCategory = 'all';
+
+        function filterVehicles() {
+            const query = document.getElementById('vehicle-search').value.toLowerCase();
+            const filtered = vehiclesList.filter(v => {
+                const matchesSearch = v.name.toLowerCase().includes(query) || 
+                                      (v.friendly_name && v.friendly_name.toLowerCase().includes(query));
+                const matchesCategory = (selectedCategory === 'all' || v.category === selectedCategory);
+                return matchesSearch && matchesCategory;
+            });
+            renderVehicleList(filtered);
+        }
+
+        // Search vehicle logic
+        document.getElementById('vehicle-search').addEventListener('input', () => {
+            filterVehicles();
+        });
+
+        // Category tabs filter click logic
+        document.querySelectorAll('.category-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                selectedCategory = e.currentTarget.getAttribute('data-category');
+                filterVehicles();
+            });
+        });
+
+        // Select Vehicle and Load Metadata
+        async function selectVehicle(name, grpPath) {
+            currentVehicle = { name, grp_path: grpPath };
+            
+            // Highlight the active item in DOM (preserves search/filter state and scroll position)
+            document.querySelectorAll('.vehicle-item').forEach(item => {
+                if (item.getAttribute('data-name') === name) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // Find the vehicle from the list to get its friendly name
+            const vObj = vehiclesList.find(v => v.name === name);
+            const displayName = vObj ? (vObj.friendly_name || name) : name;
+            const category = vObj ? vObj.category : 'aircraft';
+            
+            // Display loading info
+            document.getElementById('vehicle-info-section').style.display = 'block';
+            document.getElementById('info-name').innerText = displayName;
+            document.getElementById('info-grp').innerText = grpPath.split('\\').pop();
+            
+            document.getElementById('orig-len').innerText = LANGUAGES[currentLang]['loading_details'];
+            document.getElementById('orig-hgt').innerText = LANGUAGES[currentLang]['loading_details'];
+            document.getElementById('orig-span').innerText = LANGUAGES[currentLang]['loading_details'];
+            document.getElementById('btn-generate').disabled = true;
+            
+            try {
+                const res = await fetch(`/api/details?model=${encodeURIComponent(name)}&grp=${encodeURIComponent(grpPath)}`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert(LANGUAGES[currentLang]['error_details_failed'] + data.error);
+                    return;
+                }
+                
+                vehicleDetails = data;
+                
+                // Check if vehicle is a tank
+                isCurrentVehicleTank = (category === 'tank');
+                updateLevelHelperText();
+                
+                // Update scale options and labels adaptively
+                updateScaleModeOptions(category);
+                
+                // Show bounds
+                document.getElementById('orig-len').innerText = `${data.length.toFixed(2)} m`;
+                document.getElementById('orig-hgt').innerText = `${data.height.toFixed(2)} m`;
+                document.getElementById('orig-span').innerText = `${data.wingspan.toFixed(2)} m`;
+                
+                // Automatically adapt scaling slider values
+                const scaleMode = document.getElementById('scale-mode').value;
+                const customSizeInput = document.getElementById('custom-size');
+                
+                if (scaleMode === 'wingspan') {
+                    customSizeInput.value = Math.min(2000, Math.round(data.wingspan * 100)); // Default approx 1:10 scale
+                } else if (scaleMode === 'length') {
+                    customSizeInput.value = Math.min(2000, Math.round(data.length * 100));
+                }
+                
+                updateScaledDimensions();
+                document.getElementById('btn-generate').disabled = false;
+                
+                // Load interactive preview immediately!
+                document.getElementById('no-model-overlay').style.display = 'none';
+                document.getElementById('exploded-controls-panel').style.display = 'block';
+                loadPreviewModel();
+            } catch (err) {
+                console.error("Error loading vehicle details:", err);
+            }
+        }
+        function updateScaleModeOptions(category) {
+            const scaleModeSelect = document.getElementById('scale-mode');
+            const currentMode = scaleModeSelect.value;
+            
+            scaleModeSelect.innerHTML = '';
+            
+            if (category === 'aircraft') {
+                scaleModeSelect.innerHTML = `
+                    <option value="wingspan">${LANGUAGES[currentLang]['scale_mode_wingspan_aircraft']}</option>
+                    <option value="length">${LANGUAGES[currentLang]['scale_mode_length_aircraft']}</option>
+                    <option value="predefined">${LANGUAGES[currentLang]['scale_mode_predefined']}</option>
+                `;
+                if (currentMode !== 'predefined') {
+                    scaleModeSelect.value = 'wingspan';
+                } else {
+                    scaleModeSelect.value = 'predefined';
+                }
+            } else if (category === 'tank') {
+                scaleModeSelect.innerHTML = `
+                    <option value="length">${LANGUAGES[currentLang]['scale_mode_length_tank']}</option>
+                    <option value="wingspan">${LANGUAGES[currentLang]['scale_mode_wingspan_tank']}</option>
+                    <option value="predefined">${LANGUAGES[currentLang]['scale_mode_predefined']}</option>
+                `;
+                if (currentMode !== 'predefined') {
+                    scaleModeSelect.value = 'length';
+                } else {
+                    scaleModeSelect.value = 'predefined';
+                }
+            } else if (category === 'ship') {
+                scaleModeSelect.innerHTML = `
+                    <option value="length">${LANGUAGES[currentLang]['scale_mode_length_ship']}</option>
+                    <option value="wingspan">${LANGUAGES[currentLang]['scale_mode_wingspan_ship']}</option>
+                    <option value="predefined">${LANGUAGES[currentLang]['scale_mode_predefined']}</option>
+                `;
+                if (currentMode !== 'predefined') {
+                    scaleModeSelect.value = 'length';
+                } else {
+                    scaleModeSelect.value = 'predefined';
+                }
+            }
+            
+            updateLabelsAndTitles(category);
+        }
+
+        function updateLabelsAndTitles(category) {
+            const lenLabel = document.getElementById('calc-len-label');
+            const hgtLabel = document.getElementById('calc-hgt-label');
+            const spanLabel = document.getElementById('calc-span-label');
+            const sliderLabel = document.getElementById('slider-label');
+            const scaleMode = document.getElementById('scale-mode').value;
+            const sizeValue = document.getElementById('custom-size').value;
+            
+            const origLenLabel = document.getElementById('orig-len-label');
+            const origHgtLabel = document.getElementById('orig-hgt-label');
+            const origSpanLabel = document.getElementById('orig-span-label');
+            
+            const lang = LANGUAGES[currentLang];
+            
+            if (category === 'ship') {
+                lenLabel.innerText = lang['label_len_ship'];
+                hgtLabel.innerText = lang['label_hgt_ship'];
+                spanLabel.innerText = lang['label_span_ship'];
+                
+                if (origLenLabel) origLenLabel.innerText = lang['dim_eslora'];
+                if (origHgtLabel) origHgtLabel.innerText = lang['dim_puntal'];
+                if (origSpanLabel) origSpanLabel.innerText = lang['dim_manga'];
+                
+                if (scaleMode === 'length') {
+                    sliderLabel.innerHTML = `${lang['slider_len_ship']}: <span id="slider-val-display">${sizeValue}</span> mm`;
+                } else if (scaleMode === 'wingspan') {
+                    sliderLabel.innerHTML = `${lang['slider_span_ship']}: <span id="slider-val-display">${sizeValue}</span> mm`;
+                }
+            } else if (category === 'tank') {
+                lenLabel.innerText = lang['label_len_tank'];
+                hgtLabel.innerText = lang['label_hgt_tank'];
+                spanLabel.innerText = lang['label_span_tank'];
+                
+                if (origLenLabel) origLenLabel.innerText = lang['dim_length'];
+                if (origHgtLabel) origHgtLabel.innerText = lang['dim_height'];
+                if (origSpanLabel) origSpanLabel.innerText = lang['dim_width'];
+                
+                if (scaleMode === 'length') {
+                    sliderLabel.innerHTML = `${lang['slider_len_tank']}: <span id="slider-val-display">${sizeValue}</span> mm`;
+                } else if (scaleMode === 'wingspan') {
+                    sliderLabel.innerHTML = `${lang['slider_span_tank']}: <span id="slider-val-display">${sizeValue}</span> mm`;
+                }
+            } else { // aircraft
+                lenLabel.innerText = lang['label_len_aircraft'];
+                hgtLabel.innerText = lang['label_hgt_aircraft'];
+                spanLabel.innerText = lang['label_span_aircraft'];
+                
+                if (origLenLabel) origLenLabel.innerText = lang['dim_length'];
+                if (origHgtLabel) origHgtLabel.innerText = lang['dim_height'];
+                if (origSpanLabel) origSpanLabel.innerText = lang['dim_wingspan'];
+                
+                if (scaleMode === 'length') {
+                    sliderLabel.innerHTML = `${lang['slider_len_aircraft']}: <span id="slider-val-display">${sizeValue}</span> mm`;
+                } else if (scaleMode === 'wingspan') {
+                    sliderLabel.innerHTML = `${lang['slider_span_aircraft']}: <span id="slider-val-display">${sizeValue}</span> mm`;
+                }
+            }
+        }
+        // Handle scaling calculation
+        function updateScaledDimensions() {
+            if (!vehicleDetails) return;
+            
+            const scaleMode = document.getElementById('scale-mode').value;
+            const originalLength = vehicleDetails.length;
+            const originalWingspan = vehicleDetails.wingspan;
+            const originalHeight = vehicleDetails.height;
+            
+            let scaleFactor = 1.0;
+            
+            if (scaleMode === 'predefined') {
+                const scale = parseFloat(document.getElementById('predefined-scale').value);
+                // Predefined: 1:32 means factor = 1/32 * 1000 mm = 31.25
+                scaleFactor = (1.0 / scale) * 1000.0;
+            } else if (scaleMode === 'wingspan') {
+                const targetWingspan = parseFloat(document.getElementById('custom-size').value);
+                scaleFactor = targetWingspan / originalWingspan;
+            } else { // length
+                const targetLength = parseFloat(document.getElementById('custom-size').value);
+                scaleFactor = targetLength / originalLength;
+            }
+            
+            const printLen = originalLength * scaleFactor;
+            const printHgt = originalHeight * scaleFactor;
+            const printSpan = originalWingspan * scaleFactor;
+            
+            document.getElementById('calc-len').innerHTML = `${printLen.toFixed(1)}<span>mm</span>`;
+            document.getElementById('calc-hgt').innerHTML = `${printHgt.toFixed(1)}<span>mm</span>`;
+            document.getElementById('calc-span').innerHTML = `${printSpan.toFixed(1)}<span>mm</span>`;
+        }
+
+        // Listeners for scaling inputs
+        document.getElementById('scale-mode').addEventListener('change', (e) => {
+            const mode = e.target.value;
+            const customGroup = document.getElementById('custom-size-group');
+            const predefGroup = document.getElementById('predefined-scale-group');
+            
+            if (mode === 'predefined') {
+                customGroup.style.display = 'none';
+                predefGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'block';
+                predefGroup.style.display = 'none';
+                
+                const vObj = vehiclesList.find(v => v.name === currentVehicle.name);
+                const category = vObj ? vObj.category : 'aircraft';
+                updateLabelsAndTitles(category);
+            }
+            updateScaledDimensions();
+        });
+
+        document.getElementById('predefined-scale').addEventListener('change', updateScaledDimensions);
+        
+        document.getElementById('custom-size').addEventListener('input', (e) => {
+            const vObj = vehiclesList.find(v => v.name === currentVehicle.name);
+            const category = vObj ? vObj.category : 'aircraft';
+            updateLabelsAndTitles(category);
+            updateScaledDimensions();
+        });
+
+        // Segmentation level handlers
+        document.querySelectorAll('.segment-level-option').forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                document.querySelectorAll('.segment-level-option').forEach(o => o.classList.remove('active'));
+                const option = e.currentTarget;
+                option.classList.add('active');
+                selectedLevel = parseInt(option.dataset.level);
+                
+                updateLevelHelperText();
+                
+                // Recolor and update groups in real time
+                applySegmentation();
+            });
+        });
+
+        // Trigger Model Generation
+        document.getElementById('btn-generate').addEventListener('click', async () => {
+            if (!currentVehicle) return;
+            
+            const btn = document.getElementById('btn-generate');
+            const spinner = document.getElementById('btn-spinner');
+            const btnText = document.getElementById('btn-text');
+            
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.innerText = LANGUAGES[currentLang]['btn_generating'];
+            
+            const scaleMode = document.getElementById('scale-mode').value;
+            let scaleValue = 1.0;
+            
+            if (scaleMode === 'predefined') {
+                const scale = parseFloat(document.getElementById('predefined-scale').value);
+                scaleValue = 1.0 / scale; 
+            } else {
+                scaleValue = parseFloat(document.getElementById('custom-size').value);
+            }
+            
+            const payload = {
+                model: currentVehicle.name,
+                grp: currentVehicle.grp_path,
+                scale_mode: scaleMode === 'predefined' ? 'multiplier' : scaleMode,
+                scale_value: scaleValue,
+                level: selectedLevel,
+                excluded_parts: activeExcludedParts
+            };
+            
+            try {
+                const res = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert(LANGUAGES[currentLang]['error_generate_failed'] + data.error);
+                } else {
+                    // Update lists to show active download buttons
+                    generatedFiles = data.files;
+                    generatedGroupsMap = data.groups_map;
+                    renderDownloadPartsList(generatedFiles, generatedGroupsMap);
+                    alert(LANGUAGES[currentLang]['generate_success']);
+                }
+            } catch (err) {
+                console.error("Error generating parts:", err);
+                alert(LANGUAGES[currentLang]['error_connect']);
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.innerText = LANGUAGES[currentLang]['btn_generate'];
+            }
+        });
+
+        // Render Parts List Sidebar DOM (Preview Mode)
+        function renderPreviewPartsList(groupsMap, groupColors) {
+            const container = document.getElementById('parts-list-container');
+            document.getElementById('parts-count').innerText = `${Object.keys(groupsMap).length} ${LANGUAGES[currentLang]['parts_count_suffix_pieces']}`;
+            
+            // Set header title to Estimated Disassembly
+            const titleEl = document.querySelector('.parts-header span:first-child');
+            if (titleEl) titleEl.innerText = LANGUAGES[currentLang]['parts_estimated'];
+            
+            let html = '';
+            Object.keys(groupsMap).forEach((groupName, index) => {
+                const colorHex = '#' + groupColors[groupName].toString(16).padStart(6, '0');
+                
+                // A group is excluded if all its raw subgroups are in activeExcludedParts
+                const targetSubgroups = groupsMap[groupName] || [groupName];
+                const allExcluded = targetSubgroups.every(sg => activeExcludedParts.includes(sg));
+                const isChecked = allExcluded ? '' : 'checked';
+                
+                const translatedName = LANGUAGES[currentLang][groupName] || groupName.replace(/_/g, ' ').toUpperCase();
+                
+                html += `
+                    <div class="part-item" style="opacity: ${allExcluded ? 0.5 : 1}; transition: opacity 0.2s;">
+                        <div class="part-name-wrapper" style="display: flex; align-items: center;">
+                            <input type="checkbox" id="chk_part_${groupName}" ${isChecked} onchange="togglePartInclusion('${groupName}')" style="margin-right: 10px; accent-color: var(--accent); cursor: pointer; transform: scale(1.1);">
+                            <span class="part-color-dot" style="background-color: ${colorHex}; margin-right: 8px;"></span>
+                            <span style="font-weight: 500; cursor: pointer;" onclick="document.getElementById('chk_part_${groupName}').click()">${translatedName}</span>
+                        </div>
+                        <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">${LANGUAGES[currentLang]['part_preview']}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            document.getElementById('parts-panel').style.display = 'flex';
+        }
+
+        function updateMeshVisibility() {
+            if (!partMeshes.length) return;
+            partMeshes.forEach(part => {
+                part.mesh.visible = !activeExcludedParts.includes(part.name);
+            });
+        }
+
+        function togglePartInclusion(groupName) {
+            const chk = document.getElementById(`chk_part_${groupName}`);
+            const isChecked = chk.checked;
+            
+            // Find all meshes belonging to this group
+            const rawGroups = vehicleDetails.groups;
+            const groupsMap = classifyGroupsJS(rawGroups, selectedLevel);
+            const targetSubgroups = groupsMap[groupName] || [groupName];
+            
+            if (isChecked) {
+                // Remove group name and its target subgroups from excluded list
+                activeExcludedParts = activeExcludedParts.filter(p => p !== groupName && !targetSubgroups.includes(p));
+                
+                // BUT re-exclude any variants that are currently deselected in the variants panel!
+                targetSubgroups.forEach(sg => {
+                    for (const base in vehicleVariants) {
+                        const options = vehicleVariants[base];
+                        if (options.includes(sg)) {
+                            const selectedRadio = document.querySelector(`input[name="variant_${base}"]:checked`);
+                            const selectedVal = selectedRadio ? selectedRadio.value : null;
+                            if (sg !== selectedVal) {
+                                if (!activeExcludedParts.includes(sg)) {
+                                    activeExcludedParts.push(sg);
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Add all target subgroups to excluded list
+                targetSubgroups.forEach(sg => {
+                    if (!activeExcludedParts.includes(sg)) {
+                        activeExcludedParts.push(sg);
+                    }
+                });
+                if (!activeExcludedParts.includes(groupName)) {
+                    activeExcludedParts.push(groupName);
+                }
+            }
+            
+            // Update mesh visibility in Three.js viewport
+            updateMeshVisibility();
+            
+            // Re-render the list to update item opacity/checks
+            applySegmentation();
+        }
+
+        // Render Parts List Sidebar DOM (Generated Download Mode)
+        function renderDownloadPartsList(files, groupsMap) {
+            const container = document.getElementById('parts-list-container');
+            document.getElementById('parts-count').innerText = `${files.length} ${LANGUAGES[currentLang]['parts_count_suffix_files']}`;
+            
+            // Set header title to Generated Parts
+            const titleEl = document.querySelector('.parts-header span:first-child');
+            if (titleEl) titleEl.innerText = LANGUAGES[currentLang]['parts_generated'];
+            
+            const groupKeys = Object.keys(groupsMap);
+            
+            let html = '';
+            files.forEach((file, index) => {
+                const partName = file.replace('.obj', '').replace('bf_109g_6_', '').replace(currentVehicle.name + '_', '');
+                
+                // Find matching color index by mapping filename to the classified group
+                let colorIndex = index;
+                for (let k = 0; k < groupKeys.length; k++) {
+                    if (file.toLowerCase().includes(groupKeys[k].toLowerCase())) {
+                        colorIndex = k;
+                        break;
+                    }
+                }
+                const colorHex = '#' + PART_COLORS[colorIndex % PART_COLORS.length].toString(16).padStart(6, '0');
+                
+                const translatedPartName = LANGUAGES[currentLang][partName] || partName.replace(/_/g, ' ').toUpperCase();
+                
+                html += `
+                    <div class="part-item">
+                        <div class="part-name-wrapper">
+                            <span class="part-color-dot" style="background-color: ${colorHex};"></span>
+                            <span style="font-weight: 500;">${translatedPartName}</span>
+                        </div>
+                        <a href="/parts/${file}" download="${file}" class="part-btn-dl">${LANGUAGES[currentLang]['part_download']}</a>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // Initialize Three.js Viewport
+        function init3DViewport() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x06060c);
+            
+            camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
+            camera.position.set(0, 500, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            container.appendChild(renderer.domElement);
+            
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.1;
+            
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambient);
+            
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight1.position.set(1000, 2000, 1000);
+            scene.add(dirLight1);
+            
+            const dirLight2 = new THREE.DirectionalLight(0x8b5cf6, 0.4);
+            dirLight2.position.set(-1000, 500, -1000);
+            scene.add(dirLight2);
+            
+            const grid = new THREE.GridHelper(2000, 50, 0x8b5cf6, 0x1e1e2d);
+            grid.position.y = -100;
+            scene.add(grid);
+            
+            scene.add(partsGroup);
+            
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            });
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function disposeNode(node) {
+            if (node instanceof THREE.Mesh) {
+                if (node.geometry) {
+                    node.geometry.dispose();
+                }
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach(mtl => {
+                            if (mtl.map) mtl.map.dispose();
+                            mtl.dispose();
+                        });
+                    } else {
+                        if (node.material.map) node.material.map.dispose();
+                        node.material.dispose();
+                    }
+                }
+            }
+        }
+
+        // Load complete OBJ preview model
+        function loadPreviewModel() {
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('model-loading-overlay');
+            const loadingText = document.getElementById('model-loading-text');
+            loadingOverlay.style.display = 'flex';
+            loadingText.innerText = LANGUAGES[currentLang]['downloading_3d'] + ' (0%)';
+
+            // Traverse and dispose old geometries/materials to prevent WebGL memory leaks
+            partsGroup.traverse((child) => {
+                disposeNode(child);
+            });
+            while(partsGroup.children.length > 0){ 
+                partsGroup.remove(partsGroup.children[0]); 
+            }
+            partMeshes = [];
+            activeExcludedParts = [];
+            vehicleVariants = {};
+            generatedFiles = null;
+            generatedGroupsMap = null;
+            document.getElementById('exploded-slider').value = 0;
+            document.getElementById('explode-display').innerText = 0;
+            
+            const listContainer = document.getElementById('parts-list-container');
+            listContainer.innerHTML = `<div style="padding: 10px; color: var(--text-secondary); font-size: 12px; text-align: center;">${LANGUAGES[currentLang]['downloading_3d']}</div>`;
+            document.getElementById('parts-panel').style.display = 'flex';
+            
+            const loader = new THREE.OBJLoader();
+            const modelUrl = `/api/model?model=${encodeURIComponent(currentVehicle.name)}&grp=${encodeURIComponent(currentVehicle.grp_path)}`;
+            loader.load(modelUrl, (obj) => {
+                // Hide loading overlay on success
+                loadingOverlay.style.display = 'none';
+
+                obj.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        let groupName = child.name || (child.parent ? child.parent.name : '') || 'default';
+                        
+                        // Exclude flare, fire, and blur groups in viewport and list
+                        const excludeKeywords = ['flare', 'fire', 'prop_side', 'prop_wind', 'Object001'];
+                        const gl = groupName.toLowerCase();
+                        if (excludeKeywords.some(k => gl.includes(k))) {
+                            child.visible = false;
+                            return;
+                        }
+                        
+                        const box = new THREE.Box3().setFromObject(child);
+                        const center = new THREE.Vector3();
+                        box.getCenter(center);
+                        
+                        partMeshes.push({
+                            mesh: child,
+                            name: groupName,
+                            originalPos: child.position.clone(),
+                            center: center
+                        });
+                    }
+                });
+                
+                partsGroup.add(obj);
+                
+                // Calculate modelMaxDim
+                const box = new THREE.Box3().setFromObject(obj);
+                const size = new THREE.Vector3();
+                box.getSize(size);
+                modelMaxDim = Math.max(size.x, size.y, size.z) || 1.0;
+                
+                // Detect variants and render control panel
+                const rawGroups = vehicleDetails.groups;
+                vehicleVariants = detectVariantsJS(rawGroups);
+                renderVariantsPanel(vehicleVariants);
+                
+                // Color dynamically and generate side preview list
+                applySegmentation();
+                
+                // Adjust focus
+                centerCameraOnModel();
+            },
+            (xhr) => {
+                if (xhr.lengthComputable) {
+                    const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                    loadingText.innerText = LANGUAGES[currentLang]['downloading_3d'] + ` (${percent}%)`;
+                    listContainer.innerHTML = `<div style="padding: 10px; color: var(--text-secondary); font-size: 12px; text-align: center;">${LANGUAGES[currentLang]['loading_model']} (${percent}%)</div>`;
+                }
+            },
+            (err) => {
+                console.error("Error loading preview:", err);
+                loadingText.innerText = LANGUAGES[currentLang]['error_loading_3d'];
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 3000);
+                listContainer.innerHTML = `<div style="padding: 10px; color: var(--error); font-size: 12px; text-align: center;">${LANGUAGES[currentLang]['error_loading_3d']}</div>`;
+            });
+        }
+
+        // Re-color and re-explode preview meshes in Javascript
+        function applySegmentation() {
+            if (!partMeshes.length || !vehicleDetails) return;
+            
+            const rawGroups = vehicleDetails.groups;
+            const groupsMap = classifyGroupsJS(rawGroups, selectedLevel);
+            
+            const groupKeys = Object.keys(groupsMap);
+            const groupColors = {};
+            groupKeys.forEach((key, index) => {
+                groupColors[key] = PART_COLORS[index % PART_COLORS.length];
+            });
+            
+            partMeshes.forEach(part => {
+                let matchedKey = (selectedLevel === 1) ? 'body' : ((selectedLevel === 2) ? 'fuselage' : 'default');
+                const cleanPartName = part.name.replace(/[\s:]/g, '_').toLowerCase();
+                for (const key in groupsMap) {
+                    const match = groupsMap[key].some(g => {
+                        const cleanG = g.replace(/[\s:]/g, '_').toLowerCase();
+                        return cleanPartName === cleanG || cleanPartName.startsWith(cleanG) || cleanG.startsWith(cleanPartName);
+                    });
+                    if (match) {
+                        matchedKey = key;
+                        break;
+                    }
+                }
+                
+                const colorHex = groupColors[matchedKey] || 0x64748b;
+                part.mesh.material = new THREE.MeshStandardMaterial({
+                    color: colorHex,
+                    roughness: 0.4,
+                    metalness: 0.2,
+                    side: THREE.DoubleSide
+                });
+                
+                const groupNameLower = matchedKey.toLowerCase();
+                const partNameLower = part.name.toLowerCase();
+                let explodeDir = new THREE.Vector3();
+                
+                // Direction mappings
+                if (groupNameLower.includes('propeller') || partNameLower.includes('prop') || partNameLower.includes('spinner')) {
+                    explodeDir.set(1.5, 0, 0);
+                } else if (groupNameLower.includes('canopy') || partNameLower.includes('blister') || partNameLower.includes('canopy')) {
+                    explodeDir.set(0, 1.8, 0);
+                } else if (groupNameLower.includes('payload') || partNameLower.includes('bomb') || partNameLower.includes('rocket') || partNameLower.includes('torpedo') || partNameLower.includes('210mm')) {
+                    explodeDir.set(0, -2.0, 0); // Drop bombs/rockets straight down
+                } else if (groupNameLower.includes('launchers') || partNameLower.includes('pylon') || partNameLower.includes('launcher') || partNameLower.includes('rack') || partNameLower.includes('pod') || partNameLower.includes('tube')) {
+                    explodeDir.set(0, -1.4, 0); // Displace pylons slightly down
+                } else if (groupNameLower.includes('weapons') || partNameLower.includes('cannon') || partNameLower.includes('gun') || partNameLower.includes('mg') || partNameLower.includes('mgun') || partNameLower.includes('flak')) {
+                    if (partNameLower.includes('_l') || partNameLower.includes('l_')) {
+                        explodeDir.set(0.5, 0, 1.4);
+                    } else if (partNameLower.includes('_r') || partNameLower.includes('r_')) {
+                        explodeDir.set(0.5, 0, -1.4);
+                    } else {
+                        explodeDir.set(1.4, 0, 0); // Nose weapons push forward
+                    }
+                } else if (groupNameLower.includes('rudder') || partNameLower.includes('rudder') || partNameLower.includes('tail')) {
+                    explodeDir.set(-1.2, 0.2, 0);
+                } else if (groupNameLower.includes('wing_left') || partNameLower.includes('wing_left') || partNameLower.includes('_l_') || partNameLower.endsWith('_l')) {
+                    explodeDir.set(0, 0, 1.2);
+                } else if (groupNameLower.includes('wing_right') || partNameLower.includes('wing_right') || partNameLower.includes('_r_') || partNameLower.endsWith('_r')) {
+                    explodeDir.set(0, 0, -1.2);
+                } else if (partNameLower.includes('gear_strut_left') || partNameLower.includes('wheel_left') || partNameLower.includes('gear_l') || partNameLower.includes('wheel_l')) {
+                    explodeDir.set(0, -1.2, 0.8);
+                } else if (partNameLower.includes('gear_strut_right') || partNameLower.includes('wheel_right') || partNameLower.includes('gear_r') || partNameLower.includes('wheel_r')) {
+                    explodeDir.set(0, -1.2, -0.8);
+                } else if (partNameLower.includes('gear_strut_tail') || partNameLower.includes('wheel_tail') || partNameLower.includes('gear_c') || partNameLower.includes('wheel_c')) {
+                    explodeDir.set(-0.5, -1.2, 0);
+                } else if (partNameLower.includes('elevator_left') || partNameLower.includes('elevator0')) {
+                    explodeDir.set(-0.8, 0.2, 0.8);
+                } else if (partNameLower.includes('elevator_right') || partNameLower.includes('elevator1')) {
+                    explodeDir.set(-0.8, 0.2, -0.8);
+                } else {
+                    if (part.center.length() < 0.01) {
+                        explodeDir.set(0, 0.8, 0); // Default vertical shift for origin parts
+                    } else {
+                        explodeDir.copy(part.center).normalize().multiplyScalar(1.2);
+                    }
+                }
+                
+                part.explodeDir = explodeDir;
+            });
+            
+            // Reapply current explode factor
+            const factor = parseFloat(document.getElementById('exploded-slider').value);
+            partMeshes.forEach(part => {
+                const offset = part.explodeDir.clone().multiplyScalar((factor / 100.0) * modelMaxDim * 1.5);
+                part.mesh.position.copy(part.originalPos).add(offset);
+            });
+            
+            // Show the sidebar with color references
+            renderPreviewPartsList(groupsMap, groupColors);
+        }
+
+        function detectVariantsJS(rawGroups) {
+            const variants = {};
+            const damageRegex = /(_dmg|_broken|_damaged|dmg)(_[a-zA-Z0-9]+|[a-zA-Z0-9]+)?$/i;
+            
+            rawGroups.forEach(g => {
+                const match = g.match(damageRegex);
+                if (match) {
+                    const baseName = g.substring(0, match.index);
+                    const possibleBases = [
+                        baseName,
+                        baseName + '_clean',
+                        baseName + '_intact',
+                        baseName + '_0'
+                    ];
+                    
+                    let baseGroup = null;
+                    for (const possible of possibleBases) {
+                        baseGroup = rawGroups.find(r => r.toLowerCase() === possible.toLowerCase());
+                        if (baseGroup) break;
+                    }
+                    
+                    const matchedBase = baseGroup || baseName;
+                    
+                    if (!variants[matchedBase]) {
+                        variants[matchedBase] = [matchedBase];
+                    }
+                    if (!variants[matchedBase].includes(g)) {
+                        variants[matchedBase].push(g);
+                    }
+                }
+            });
+            
+            for (const key in variants) {
+                if (variants[key].length < 2) {
+                    delete variants[key];
+                }
+            }
+            return variants;
+        }
+
+        function renderVariantsPanel(variants) {
+            const section = document.getElementById('variants-control-section');
+            const container = document.getElementById('variants-container');
+            
+            if (Object.keys(variants).length === 0) {
+                section.style.display = 'none';
+                container.innerHTML = '';
+                activeExcludedParts = [];
+                return;
+            }
+            
+            section.style.display = 'block';
+            let html = '';
+            
+            for (const base in variants) {
+                const options = variants[base];
+                const cleanBaseName = base.replace(/[\s:_]/g, ' ').toUpperCase();
+                
+                html += `
+                    <div style="background: rgba(0,0,0,0.15); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">${cleanBaseName}</div>
+                        <div style="display: flex; gap: 8px;">
+                `;
+                
+                options.forEach((opt, idx) => {
+                    const isDmg = opt.toLowerCase().includes('dmg') || opt.toLowerCase().includes('broken') || opt.toLowerCase().includes('damaged');
+                    const label = isDmg ? LANGUAGES[currentLang]['variant_damaged'] : LANGUAGES[currentLang]['variant_intact'];
+                    const isChecked = idx === 0 ? "checked" : "";
+                    
+                    html += `
+                        <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); cursor: pointer; text-transform: none; font-size: 12px; margin-bottom: 0;">
+                            <input type="radio" name="variant_${base}" value="${opt}" ${isChecked} onchange="toggleVariantMesh('${base}', '${opt}')" style="margin: 0; accent-color: var(--accent);">
+                            ${label}
+                        </label>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+            
+            // Apply initial visibility
+            activeExcludedParts = [];
+            for (const base in variants) {
+                const options = variants[base];
+                options.forEach((opt, idx) => {
+                    if (idx > 0) {
+                        activeExcludedParts.push(opt);
+                    }
+                });
+            }
+            updateMeshVisibility();
+        }
+
+        function toggleVariantMesh(base, selectedOpt) {
+            if (!vehicleVariants[base]) return;
+            
+            const options = vehicleVariants[base];
+            
+            options.forEach(opt => {
+                if (opt === selectedOpt) {
+                    activeExcludedParts = activeExcludedParts.filter(p => p !== opt);
+                } else {
+                    if (!activeExcludedParts.includes(opt)) {
+                        activeExcludedParts.push(opt);
+                    }
+                }
+            });
+            
+            updateMeshVisibility();
+            applySegmentation(); // Update the sidebar list checking and opacity
+        }
+
+        function updateLevelHelperText() {
+            const helper = document.getElementById('level-helper-text');
+            const vObj = vehiclesList.find(v => v.name === (currentVehicle ? currentVehicle.name : ''));
+            const category = vObj ? vObj.category : 'aircraft';
+            const lang = LANGUAGES[currentLang];
+            
+            const key = `helper_lvl${selectedLevel}_${category}`;
+            helper.innerText = lang[key] || '';
+        }
+
+        // Auto focus OrbitControls camera on model
+        function centerCameraOnModel() {
+            const box = new THREE.Box3().setFromObject(partsGroup);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            
+            controls.target.copy(center);
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
+            cameraZ *= 1.8;
+            
+            camera.position.set(center.x + cameraZ, center.y + maxDim, center.z + cameraZ);
+            camera.lookAt(center);
+            controls.update();
+        }
+
+        // Explode view slider logic
+        document.getElementById('exploded-slider').addEventListener('input', (e) => {
+            const factor = parseFloat(e.target.value);
+            document.getElementById('explode-display').innerText = Math.round(factor);
+            
+            partMeshes.forEach(part => {
+                const offset = part.explodeDir.clone().multiplyScalar((factor / 100.0) * modelMaxDim * 0.8);
+                part.mesh.position.copy(part.originalPos).add(offset);
+            });
+        });
+
+        // Initialize script
+        window.addEventListener('DOMContentLoaded', () => {
+            let savedLang = localStorage.getItem('preferred_lang');
+            if (!savedLang) {
+                savedLang = 'en';
+            }
+            setLanguage(savedLang);
+            fetchVehicles();
+            init3DViewport();
+        });
+    </script>
+</body>
+</html>

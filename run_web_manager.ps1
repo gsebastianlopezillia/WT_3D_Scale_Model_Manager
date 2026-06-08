@@ -1,0 +1,16 @@
+# PowerShell Orchestrator to launch the WT 3D Scale Model Manager web interface
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "==========================================================" -ForegroundColor Cyan
+Write-Host "Starting War Thunder 3D Scale Model Manager..." -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Cyan
+
+# 1. Start a hidden background process to launch the browser in 2 seconds
+Write-Host "Scheduling browser launch..." -ForegroundColor Yellow
+Start-Process powershell.exe -ArgumentList "-Command", "Start-Sleep -Seconds 2; Start-Process 'http://localhost:8000'" -WindowStyle Hidden
+
+# 2. Run the python web server (this blocks the console and keeps the server alive)
+Write-Host "Launching Python web server backend (http://localhost:8000)..." -ForegroundColor Yellow
+Write-Host "Press Ctrl+C in this window to stop the server." -ForegroundColor DarkGray
+python web_server.py

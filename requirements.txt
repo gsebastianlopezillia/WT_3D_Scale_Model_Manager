@@ -1,0 +1,4 @@
+# Python dependencies for War Thunder Scale Model Manager
+construct==2.9.40
+zstandard
+pylzma

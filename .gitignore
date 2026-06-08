@@ -1,0 +1,49 @@
+# Caches and output assets
+Bf109_Raw_Asset/
+temp_export/
+vehicles_index.json
+
+# Local configurations (contains private paths)
+config.json
+
+# Python caching and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# External tools and cloned repositories
+tools/
+tools_git/
+wt_ext_cli/
+dagor_explorer/
+
+# Temporary files, logs, and zips
+wt-tools.zip
+wt_ext_cli.zip
+*.log
+*.txt
+temp_units_snippet.csv
+
+# Keep requirements.txt tracked despite *.txt ignore rule
+!requirements.txt
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS generated files
+Thumbs.db
+desktop.ini
+.DS_Store
