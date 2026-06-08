@@ -22,8 +22,8 @@
             <div style="display: flex; align-items: center; gap: 16px;">
                 <!-- Language Selector Toggle -->
                 <div class="lang-selector">
-                    <button class="lang-btn active" id="lang-btn-es" onclick="setLanguage('es')">ES</button>
-                    <button class="lang-btn" id="lang-btn-en" onclick="setLanguage('en')">EN</button>
+                    <button class="lang-btn active" id="lang-btn-es" onclick="setLanguage('es', true)">ES</button>
+                    <button class="lang-btn" id="lang-btn-en" onclick="setLanguage('en', true)">EN</button>
                 </div>
 
                 <div class="server-status" id="server-status-container">
@@ -34,9 +34,11 @@
         </header>
 
         <!-- Main Workspace -->
-        <main>
+        <main id="main-workspace">
+            <button class="sidebar-toggle-btn" id="sidebar-toggle" onclick="toggleSidebar()"></button>
+            
             <!-- Left Sidebar: Vehicles List -->
-            <div class="sidebar">
+            <div class="sidebar" id="sidebar-container">
                 <div class="search-box">
                     <div class="search-wrapper">
                         <span class="search-icon">🔍</span>
@@ -123,11 +125,11 @@
                     <div class="form-group" id="custom-size-group">
                         <label id="slider-label" for="custom-size"><span data-i18n="target_size">Tamaño Objetivo</span>: <span id="slider-val-display">900</span> mm</label>
                         <div class="slider-container">
-                            <input type="range" id="custom-size" min="100" max="2000" step="10" value="900">
+                            <input type="range" id="custom-size" min="100" max="5000" step="10" value="900">
                             <div class="slider-labels">
                                 <span>100 mm</span>
-                                <span>1000 mm</span>
-                                <span>2000 mm</span>
+                                <span>2500 mm</span>
+                                <span>5000 mm</span>
                             </div>
                         </div>
                     </div>
@@ -317,19 +319,19 @@
                 parts_count_suffix_files: "archivos",
                 variant_intact: "Intacta",
                 variant_damaged: "Daño Batalla",
-                helper_lvl1_aircraft: "Nivel 1: Fusiona al máximo posible las piezas. Genera un cuerpo sólido central, cabina, hélice y trenes de aterrizaje en bloques compactos. Ideal para impresiones decorativas rápidas.",
-                helper_lvl2_aircraft: "Nivel 2: Mantiene las alas y superficies integradas, pero separa la hélice, cabina, ruedas y struts de forma independiente. Buen equilibrio entre facilidad de impresión y detalle.",
-                helper_lvl3_aircraft: "Nivel 3: Separación completa de partes móviles (flaps, alerones, slats, timón, ruedas y struts individuales). Ideal para colocar electrónica o hacer articulaciones.",
-                helper_lvl1_tank: "Nivel 1: Fusiona el chasis, torreta y orugas en un solo bloque sólido. Ideal para miniaturas decorativas rápidas sin ensamblaje.",
-                helper_lvl2_tank: "Nivel 2: Separa los componentes principales (torreta, chasis, cañón y las dos orugas como bandas completas). Buen equilibrio para pintar y ensamblar.",
-                helper_lvl3_tank: "Nivel 3: Separación completa de escotillas, cañón, ruedas de rodadura e incluso eslabones de oruga individuales (si el modelo lo soporta) para ensamble pieza por pieza.",
-                helper_lvl1_ship: "Nivel 1: Fusiona el casco, superestructura y torretas en un solo bloque sólido. Ideal para maquetas navales pequeñas/rápidas.",
-                helper_lvl2_ship: "Nivel 2: Separa el casco principal de las superestructuras, mástiles y torretas principales. Equilibrio ideal para pintar y ensamblar.",
-                helper_lvl3_ship: "Nivel 3: Separación completa de torretas secundarias, cañones antiaéreos, hélices de propulsión, timones, grúas y radares. Máximo detalle y funcionalidad.",
+                helper_lvl1_aircraft: "Nivel 1: Estructura del avión fusionada en un solo bloque, manteniendo separados solo los componentes opcionales (hélice, cabina, armas y cargas).",
+                helper_lvl2_aircraft: "Nivel 2: Mantiene la estructura del fuselaje y las alas unidas, pero separa las partes móviles (hélice, cabina, trenes de aterrizaje completos, timón, timones de profundidad y superficies de control de las alas).",
+                helper_lvl3_aircraft: "Nivel 3: Exposición total. Separa cada una de las piezas individuales y subgrupos detallados del modelo.",
+                helper_lvl1_tank: "Nivel 1: Estructura del tanque (chasis, torreta, cañón, ruedas y orugas) fusionada, manteniendo separados solo las armas auxiliares y cargas.",
+                helper_lvl2_tank: "Nivel 2: Mantiene el chasis/cuerpo principal unido, pero separa las piezas funcionales móviles (torreta, cañón principal, oruga izquierda, oruga derecha, ruedas izquierdas, ruedas derechas y escotillas).",
+                helper_lvl3_tank: "Nivel 3: Exposición total. Separa cada pequeña pieza, escotilla, rodillo y eslabón individual disponible.",
+                helper_lvl1_ship: "Nivel 1: Casco y superestructura fusionados en un solo bloque, manteniendo separadas solo las hélices de propulsión y el armamento.",
+                helper_lvl2_ship: "Nivel 2: Mantiene el casco y la cubierta integrados, pero separa las partes móviles y de artillería (torretas de artillería, cañones individuales, hélices, timón y radares/grúas).",
+                helper_lvl3_ship: "Nivel 3: Exposición total. Separa cada antena, bote salvavidas, cañón AA individual y accesorio de cubierta en archivos independientes.",
                 
                 // Group Names (ES)
-                body: "Cuerpo Principal",
-                propeller: "Hélice",
+                body: "Cuerpo / Casco Principal",
+                propeller: "Hélice / Propulsor",
                 canopy: "Cabina / Cúpula",
                 landing_gear_left: "Tren de Aterrizaje Izquierdo",
                 landing_gear_right: "Tren de Aterrizaje Derecho",
@@ -346,6 +348,18 @@
                 gear_wheel_right: "Rueda de Tren Derecha",
                 gear_strut_tail: "Soporte de Tren Trasero",
                 gear_wheel_tail: "Rueda de Tren Trasera",
+                wing_left_control_surfaces: "Superficies de Control Alares Izquierdas (Flaps/Alerones)",
+                wing_right_control_surfaces: "Superficies de Control Alares Derechas (Flaps/Alerones)",
+                turret: "Torreta Principal",
+                barrel: "Cañón Principal",
+                track_left: "Oruga Izquierda",
+                track_right: "Oruga Derecha",
+                wheels_left: "Ruedas Izquierdas (Rodadura/Suspensión)",
+                wheels_right: "Ruedas Derechas (Rodadura/Suspensión)",
+                hatches: "Escotillas y Compuertas",
+                turrets: "Torretas de Artillería",
+                guns: "Cañones de Artillería",
+                radars: "Radares y Directores",
                 payload: "Cargas de Combate (Bombas/Cohetes)",
                 scale_mode_wingspan: "Por Envergadura Objetivo (Aviones)",
                 scale_mode_length: "Por Longitud Objetivo (Tanques/Otros)",
@@ -355,7 +369,30 @@
                 scale_35: "1:35 (Recomendado tanques)",
                 scale_48: "1:48",
                 scale_72: "1:72 (Miniatura)",
-                scale_100: "1:100"
+                scale_100: "1:100",
+                conflict_title: "Directorio Existente",
+                conflict_message_tmpl: "El directorio para esta generación ya existe:<br><br><strong>{folder}</strong><br><br>¿Qué deseas hacer?",
+                conflict_btn_overwrite: "Reemplazar",
+                conflict_btn_version: "Versionar",
+                conflict_btn_cancel: "Cancelar",
+                generate_success_title: "Generación Exitosa",
+                generate_success_tmpl: "Las piezas físicas se guardaron en la siguiente carpeta local:<br><br><strong>{path}</strong>",
+                btn_ok: "Aceptar",
+                label_len_ship: "Eslora (Largo)",
+                label_hgt_ship: "Puntal (Alto)",
+                label_span_ship: "Manga (Ancho)",
+                slider_len_ship: "Eslora Objetivo",
+                slider_span_ship: "Manga Objetivo",
+                label_len_tank: "Largo",
+                label_hgt_tank: "Alto",
+                label_span_tank: "Ancho",
+                slider_len_tank: "Longitud Objetivo",
+                slider_span_tank: "Ancho Objetivo",
+                label_len_aircraft: "Largo",
+                label_hgt_aircraft: "Alto",
+                label_span_aircraft: "Envergadura (Ancho)",
+                slider_len_aircraft: "Longitud Objetivo",
+                slider_span_aircraft: "Envergadura Objetivo"
             },
             en: {
                 tab_all: "All",
@@ -429,19 +466,19 @@
                 parts_count_suffix_files: "files",
                 variant_intact: "Intact",
                 variant_damaged: "Battle Damage",
-                helper_lvl1_aircraft: "Level 1: Fuses parts as much as possible. Generates a solid core body, canopy, propeller and landing gears in compact blocks. Ideal for quick decorative prints.",
-                helper_lvl2_aircraft: "Level 2: Keeps wings and control surfaces integrated, but separates the propeller, canopy, wheels and struts independently. Good balance between ease of printing and detail.",
-                helper_lvl3_aircraft: "Level 3: Full separation of moving parts (flaps, ailerons, slats, rudder, individual wheels and struts). Ideal for adding electronics or movable joints.",
-                helper_lvl1_tank: "Level 1: Fuses hull, turret and tracks into a single solid block. Ideal for quick decorative miniatures without assembly.",
-                helper_lvl2_tank: "Level 2: Separates main components (turret, hull, barrel and the two tracks as complete bands). Good balance for painting and assembly.",
-                helper_lvl3_tank: "Level 3: Full separation of hatches, barrel, road wheels and even individual track links (if supported) for piece-by-piece assembly.",
-                helper_lvl1_ship: "Level 1: Fuses hull, superstructure and turrets into a single solid block. Ideal for small/quick naval models.",
-                helper_lvl2_ship: "Level 2: Separates the main hull from superstructures, masts and main turrets. Ideal balance for painting and assembly.",
-                helper_lvl3_ship: "Level 3: Full separation of secondary turrets, anti-aircraft guns, propulsion propellers, rudders, cranes and radars. Maximum detail and functionality.",
+                helper_lvl1_aircraft: "Level 1: Complete vehicle structure fused into a single block, keeping only optional components separate (propeller, canopy, weapons, and payloads).",
+                helper_lvl2_aircraft: "Level 2: Keeps fuselage and main wing structures merged, but separates all moving parts (propeller, canopy, complete left/right/tail landing gears, rudder, elevators, and left/right wing control surfaces).",
+                helper_lvl3_aircraft: "Level 3: Full exposure. Separates every single individual piece and detailed sub-group present in the original model.",
+                helper_lvl1_tank: "Level 1: Fused tank structure (hull, turret, barrel, tracks, and wheels), keeping only auxiliary weapons and payloads separate.",
+                helper_lvl2_tank: "Level 2: Keeps the main chassis/hull merged, but separates functional moving parts (turret, main barrel, left track, right track, left wheels, right wheels, and hatches).",
+                helper_lvl3_tank: "Level 3: Full exposure. Separates every small hatch, roller, and individual link available in the model file.",
+                helper_lvl1_ship: "Level 1: Hull and superstructure fused into a single block, keeping only propulsion screws and armaments separate.",
+                helper_lvl2_ship: "Level 2: Keeps the main hull and deck integrated, but separates all moving and artillery parts (artillery turrets, individual guns, screws, rudder, and radars/cranes).",
+                helper_lvl3_ship: "Level 3: Full exposure. Separates every antenna, lifeboat, individual AA gun, and deck accessory into independent files.",
                 
                 // Group Names (EN)
-                body: "Main Body",
-                propeller: "Propeller",
+                body: "Main Body / Hull",
+                propeller: "Propeller / Screw",
                 canopy: "Canopy / Cockpit",
                 landing_gear_left: "Left Landing Gear",
                 landing_gear_right: "Right Landing Gear",
@@ -458,6 +495,18 @@
                 gear_wheel_right: "Right Gear Wheel",
                 gear_strut_tail: "Tail Gear Strut",
                 gear_wheel_tail: "Tail Gear Wheel",
+                wing_left_control_surfaces: "Left Wing Control Surfaces (Flaps/Ailerons)",
+                wing_right_control_surfaces: "Right Wing Control Surfaces (Flaps/Ailerons)",
+                turret: "Main Turret",
+                barrel: "Main Barrel",
+                track_left: "Left Track",
+                track_right: "Right Track",
+                wheels_left: "Left Wheels (Road Wheels/Sprocket)",
+                wheels_right: "Right Wheels (Road Wheels/Sprocket)",
+                hatches: "Hatches & Covers",
+                turrets: "Artillery Turrets",
+                guns: "Artillery Guns",
+                radars: "Radars & Directors",
                 payload: "Payload (Bombs/Rockets)",
                 scale_mode_wingspan: "By Target Wingspan (Aircraft)",
                 scale_mode_length: "By Target Length (Tanks/Others)",
@@ -467,16 +516,41 @@
                 scale_35: "1:35 (Recommended armor/tanks)",
                 scale_48: "1:48",
                 scale_72: "1:72 (Miniature)",
-                scale_100: "1:100"
+                scale_100: "1:100",
+                conflict_title: "Directory Already Exists",
+                conflict_message_tmpl: "The directory for this generation already exists:<br><br><strong>{folder}</strong><br><br>What would you like to do?",
+                conflict_btn_overwrite: "Overwrite",
+                conflict_btn_version: "Version",
+                conflict_btn_cancel: "Cancel",
+                generate_success_title: "Generation Successful",
+                generate_success_tmpl: "The physical parts were successfully saved to the following local folder:<br><br><strong>{path}</strong>",
+                btn_ok: "OK",
+                label_len_ship: "Length (Eslora)",
+                label_hgt_ship: "Draft (Puntal)",
+                label_span_ship: "Beam (Manga)",
+                slider_len_ship: "Target Length (Eslora)",
+                slider_span_ship: "Target Beam (Manga)",
+                label_len_tank: "Length",
+                label_hgt_tank: "Height",
+                label_span_tank: "Width",
+                slider_len_tank: "Target Length",
+                slider_span_tank: "Target Width",
+                label_len_aircraft: "Length",
+                label_hgt_aircraft: "Height",
+                label_span_aircraft: "Wingspan",
+                slider_len_aircraft: "Target Length",
+                slider_span_aircraft: "Target Wingspan"
             }
         };
 
         let currentLang = 'es';
 
-        function setLanguage(lang) {
+        function setLanguage(lang, saveToStorage = false) {
             if (!LANGUAGES[lang]) return;
             currentLang = lang;
-            localStorage.setItem('preferred_lang', lang);
+            if (saveToStorage) {
+                localStorage.setItem('explicit_lang_choice', lang);
+            }
             
             // Toggle active classes on buttons
             document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -512,7 +586,7 @@
             updateLevelHelperText();
             
             if (generatedFiles) {
-                renderDownloadPartsList(generatedFiles, generatedGroupsMap);
+                renderDownloadPartsList(generatedFiles, generatedGroupsMap, generatedFolderName);
             } else if (partMeshes.length > 0) {
                 applySegmentation();
             }
@@ -542,11 +616,13 @@
         }
 
         let currentVehicle = null;
+        let currentVehicleCategory = 'aircraft';
         let vehicleDetails = null;
         let selectedLevel = 3;
         let vehiclesList = [];
         let generatedFiles = null;
         let generatedGroupsMap = null;
+        let generatedFolderName = null;
         
         // Three.js Global Variables
         let scene, camera, renderer, controls;
@@ -574,91 +650,188 @@
         ];
 
         // Classification rules matching python server
-        function classifyGroupsJS(rawGroups, level) {
+        function classifyGroupsJS(rawGroups, level, category) {
             const groupsMap = {};
             if (level === 1) {
+                // Level 1: Fused/monolithic vehicle body,
+                // but keeps optional/customizable parts separate: propeller, canopy, weapons, launchers, payload.
                 const propeller = [];
                 const canopy = [];
-                const left_gear = [];
-                const right_gear = [];
-                const tail_gear = [];
+                const weapons = [];
+                const launchers = [];
+                const payload = [];
                 const body = [];
                 
                 rawGroups.forEach(g => {
                     const gl = g.toLowerCase();
                     if (gl.includes('prop') || gl.includes('spinner')) propeller.push(g);
                     else if (gl.includes('blister') || gl.includes('canopy') || gl.includes('glass')) canopy.push(g);
-                    else if (gl.includes('gear_l') || gl.includes('wheel_l')) left_gear.push(g);
-                    else if (gl.includes('gear_r') || gl.includes('wheel_r')) right_gear.push(g);
-                    else if (gl.includes('gear_c') || gl.includes('wheel_c')) tail_gear.push(g);
+                    else if (['pylon', 'launcher', 'rack', 'pod', 'tube'].some(k => gl.includes(k)) && !gl.includes('track')) launchers.push(g);
+                    else if (['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak'].some(k => gl.includes(k))) weapons.push(g);
+                    else if (['bomb', 'rocket', 'missile', 'torpedo', '210mm'].some(k => gl.includes(k))) payload.push(g);
                     else body.push(g);
                 });
                 
                 if (body.length) groupsMap['body'] = body;
                 if (propeller.length) groupsMap['propeller'] = propeller;
                 if (canopy.length) groupsMap['canopy'] = canopy;
-                if (left_gear.length) groupsMap['landing_gear_left'] = left_gear;
-                if (right_gear.length) groupsMap['landing_gear_right'] = right_gear;
-                if (tail_gear.length) groupsMap['landing_gear_tail'] = tail_gear;
-                
-            } else if (level === 2) {
-                const fuselage = [];
-                const wing_left = [];
-                const wing_right = [];
-                const rudder = [];
-                const elevator_left = [];
-                const elevator_right = [];
-                const propeller = [];
-                const canopy = [];
-                const gear_strut_left = [];
-                const gear_wheel_left = [];
-                const gear_strut_right = [];
-                const gear_wheel_right = [];
-                const gear_strut_tail = [];
-                const gear_wheel_tail = [];
-                const weapons = [];
-                const launchers = [];
-                const payload = [];
-                
-                rawGroups.forEach(g => {
-                    const gl = g.toLowerCase();
-                    if (gl.includes('prop') || gl.includes('spinner')) propeller.push(g);
-                    else if (gl.includes('blister') || gl.includes('canopy') || gl.includes('glass')) canopy.push(g);
-                    else if (gl.includes('wheel_l')) gear_wheel_left.push(g);
-                    else if (gl.includes('gear_l')) gear_strut_left.push(g);
-                    else if (gl.includes('wheel_r')) gear_wheel_right.push(g);
-                    else if (gl.includes('gear_r')) gear_strut_right.push(g);
-                    else if (gl.includes('wheel_c')) gear_wheel_tail.push(g);
-                    else if (gl.includes('gear_c')) gear_strut_tail.push(g);
-                    else if (gl.includes('rudder')) rudder.push(g);
-                    else if (gl.includes('elevator0') || gl.includes('elevator_l')) elevator_left.push(g);
-                    else if (gl.includes('elevator1') || gl.includes('elevator_r')) elevator_right.push(g);
-                    else if (gl.includes('wing_l') || gl.includes('flap_l') || gl.includes('flap1_l') || gl.includes('flap2_l') || gl.includes('aileron_l') || gl.includes('slat_l') || gl.includes('radiator1') || gl.includes('radiator_left')) wing_left.push(g);
-                    else if (gl.includes('wing_r') || gl.includes('flap_r') || gl.includes('flap1_r') || gl.includes('flap2_r') || gl.includes('aileron_r') || gl.includes('slat_r') || gl.includes('radiator2') || gl.includes('radiator_right')) wing_right.push(g);
-                    else if (['pylon', 'launcher', 'rack', 'pod', 'tube'].some(k => gl.includes(k)) && !gl.includes('track')) launchers.push(g);
-                    else if (['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak'].some(k => gl.includes(k))) weapons.push(g);
-                    else if (['bomb', 'rocket', 'missile', 'torpedo', '210mm'].some(k => gl.includes(k))) payload.push(g);
-                    else fuselage.push(g);
-                });
-                
-                if (fuselage.length) groupsMap['fuselage'] = fuselage;
-                if (wing_left.length) groupsMap['wing_left'] = wing_left;
-                if (wing_right.length) groupsMap['wing_right'] = wing_right;
-                if (rudder.length) groupsMap['rudder'] = rudder;
-                if (elevator_left.length) groupsMap['elevator_left'] = elevator_left;
-                if (elevator_right.length) groupsMap['elevator_right'] = elevator_right;
-                if (propeller.length) groupsMap['propeller'] = propeller;
-                if (canopy.length) groupsMap['canopy'] = canopy;
-                if (gear_strut_left.length) groupsMap['gear_strut_left'] = gear_strut_left;
-                if (gear_wheel_left.length) groupsMap['gear_wheel_left'] = gear_wheel_left;
-                if (gear_strut_right.length) groupsMap['gear_strut_right'] = gear_strut_right;
-                if (gear_wheel_right.length) groupsMap['gear_wheel_right'] = gear_wheel_right;
-                if (gear_strut_tail.length) groupsMap['gear_strut_tail'] = gear_strut_tail;
-                if (gear_wheel_tail.length) groupsMap['gear_wheel_tail'] = gear_wheel_tail;
                 if (weapons.length) groupsMap['weapons'] = weapons;
                 if (launchers.length) groupsMap['launchers'] = launchers;
                 if (payload.length) groupsMap['payload'] = payload;
                 
+            } else if (level === 2) {
+                if (category === 'tank') {
+                    // Level 2: Tanks moving/functional parts
+                    const turret = [];
+                    const barrel = [];
+                    const track_left = [];
+                    const track_right = [];
+                    const wheels_left = [];
+                    const wheels_right = [];
+                    const hatches = [];
+                    const weapons = [];
+                    const launchers = [];
+                    const payload = [];
+                    const body = [];
+                    
+                    rawGroups.forEach(g => {
+                        const gl = g.toLowerCase();
+                        if (gl.includes('turret')) {
+                            turret.push(g);
+                        } else if (['gun_barrel', 'barrel', 'cannon'].some(b => gl.includes(b)) && !['mg', 'mgun'].some(mg => gl.includes(mg))) {
+                            barrel.push(g);
+                        } else if (gl.includes('track')) {
+                            if (['_l', 'l_', 'left'].some(l => gl.includes(l))) {
+                                track_left.push(g);
+                            } else {
+                                track_right.push(g);
+                            }
+                        } else if (['wheel', 'roller', 'sprocket', 'idler', 'suspension'].some(w => gl.includes(w))) {
+                            if (['_l', 'l_', 'left'].some(l => gl.includes(l))) {
+                                wheels_left.push(g);
+                            } else {
+                                wheels_right.push(g);
+                            }
+                        } else if (['hatch', 'door', 'cover'].some(h => gl.includes(h))) {
+                            hatches.push(g);
+                        } else if (['pylon', 'launcher', 'rack', 'pod', 'tube'].some(k => gl.includes(k))) {
+                            launchers.push(g);
+                        } else if (['mg', 'mgun', 'machinegun', 'flak'].some(k => gl.includes(k))) {
+                            weapons.push(g);
+                        } else if (['bomb', 'rocket', 'missile', 'torpedo'].some(k => gl.includes(k))) {
+                            payload.push(g);
+                        } else {
+                            body.push(g);
+                        }
+                    });
+                    
+                    if (body.length) groupsMap['body'] = body;
+                    if (turret.length) groupsMap['turret'] = turret;
+                    if (barrel.length) groupsMap['barrel'] = barrel;
+                    if (track_left.length) groupsMap['track_left'] = track_left;
+                    if (track_right.length) groupsMap['track_right'] = track_right;
+                    if (wheels_left.length) groupsMap['wheels_left'] = wheels_left;
+                    if (wheels_right.length) groupsMap['wheels_right'] = wheels_right;
+                    if (hatches.length) groupsMap['hatches'] = hatches;
+                    if (weapons.length) groupsMap['weapons'] = weapons;
+                    if (launchers.length) groupsMap['launchers'] = launchers;
+                    if (payload.length) groupsMap['payload'] = payload;
+                    
+                } else if (category === 'ship') {
+                    // Level 2: Ships moving/functional parts
+                    const turrets = [];
+                    const guns = [];
+                    const propeller = [];
+                    const rudder = [];
+                    const radars = [];
+                    const weapons = [];
+                    const launchers = [];
+                    const payload = [];
+                    const body = [];
+                    
+                    rawGroups.forEach(g => {
+                        const gl = g.toLowerCase();
+                        if (gl.includes('turret')) {
+                            turrets.push(g);
+                        } else if (['gun', 'barrel', 'cannon'].some(b => gl.includes(b)) && !['mg', 'mgun'].some(mg => gl.includes(mg))) {
+                            guns.push(g);
+                        } else if (['prop', 'screw'].some(p => gl.includes(p))) {
+                            propeller.push(g);
+                        } else if (gl.includes('rudder')) {
+                            rudder.push(g);
+                        } else if (['radar', 'crane', 'director'].some(r => gl.includes(r))) {
+                            radars.push(g);
+                        } else if (['launcher', 'torpedo_tube', 'rack', 'pod', 'tube'].some(k => gl.includes(k))) {
+                            launchers.push(g);
+                        } else if (['mg', 'mgun', 'flak', 'depth_charge_mount'].some(k => gl.includes(k))) {
+                            weapons.push(g);
+                        } else if (['torpedo', 'rocket', 'depth_charge'].some(k => gl.includes(k))) {
+                            payload.push(g);
+                        } else {
+                            body.push(g);
+                        }
+                    });
+                    
+                    if (body.length) groupsMap['body'] = body;
+                    if (turrets.length) groupsMap['turrets'] = turrets;
+                    if (guns.length) groupsMap['guns'] = guns;
+                    if (propeller.length) groupsMap['propeller'] = propeller;
+                    if (rudder.length) groupsMap['rudder'] = rudder;
+                    if (radars.length) groupsMap['radars'] = radars;
+                    if (weapons.length) groupsMap['weapons'] = weapons;
+                    if (launchers.length) groupsMap['launchers'] = launchers;
+                    if (payload.length) groupsMap['payload'] = payload;
+                    
+                } else { // aircraft / other
+                    // Level 2: Aircraft moving/functional parts
+                    const body = [];
+                    const wing_l_control = [];
+                    const wing_r_control = [];
+                    const rudder = [];
+                    const elevator_left = [];
+                    const elevator_right = [];
+                    const propeller = [];
+                    const canopy = [];
+                    const gear_left = [];
+                    const gear_right = [];
+                    const gear_tail = [];
+                    const weapons = [];
+                    const launchers = [];
+                    const payload = [];
+                    
+                    rawGroups.forEach(g => {
+                        const gl = g.toLowerCase();
+                        if (gl.includes('prop') || gl.includes('spinner')) propeller.push(g);
+                        else if (gl.includes('blister') || gl.includes('canopy') || gl.includes('glass')) canopy.push(g);
+                        else if (gl.includes('wheel_l') || gl.includes('gear_l')) gear_left.push(g);
+                        else if (gl.includes('wheel_r') || gl.includes('gear_r')) gear_right.push(g);
+                        else if (gl.includes('wheel_c') || gl.includes('gear_c')) gear_tail.push(g);
+                        else if (gl.includes('rudder')) rudder.push(g);
+                        else if (gl.includes('elevator0') || gl.includes('elevator_l')) elevator_left.push(g);
+                        else if (gl.includes('elevator1') || gl.includes('elevator_r')) elevator_right.push(g);
+                        else if (['flap_l', 'flap1_l', 'flap2_l', 'aileron_l', 'slat_l'].some(w => gl.includes(w))) wing_l_control.push(g);
+                        else if (['flap_r', 'flap1_r', 'flap2_r', 'aileron_r', 'slat_r'].some(w => gl.includes(w))) wing_r_control.push(g);
+                        else if (['pylon', 'launcher', 'rack', 'pod', 'tube'].some(k => gl.includes(k)) && !gl.includes('track')) launchers.push(g);
+                        else if (['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak'].some(k => gl.includes(k))) weapons.push(g);
+                        else if (['bomb', 'rocket', 'missile', 'torpedo', '210mm'].some(k => gl.includes(k))) payload.push(g);
+                        else body.push(g);
+                    });
+                    
+                    if (body.length) groupsMap['body'] = body;
+                    if (propeller.length) groupsMap['propeller'] = propeller;
+                    if (canopy.length) groupsMap['canopy'] = canopy;
+                    if (gear_left.length) groupsMap['landing_gear_left'] = gear_left;
+                    if (gear_right.length) groupsMap['landing_gear_right'] = gear_right;
+                    if (gear_tail.length) groupsMap['landing_gear_tail'] = gear_tail;
+                    if (rudder.length) groupsMap['rudder'] = rudder;
+                    if (elevator_left.length) groupsMap['elevator_left'] = elevator_left;
+                    if (elevator_right.length) groupsMap['elevator_right'] = elevator_right;
+                    if (wing_l_control.length) groupsMap['wing_left_control_surfaces'] = wing_l_control;
+                    if (wing_r_control.length) groupsMap['wing_right_control_surfaces'] = wing_r_control;
+                    if (weapons.length) groupsMap['weapons'] = weapons;
+                    if (launchers.length) groupsMap['launchers'] = launchers;
+                    if (payload.length) groupsMap['payload'] = payload;
+                }
             } else {
                 rawGroups.forEach(g => {
                     const cleanName = g.replace(/ /g, '_').replace(/:/g, '_');
@@ -802,6 +975,7 @@
             const vObj = vehiclesList.find(v => v.name === name);
             const displayName = vObj ? (vObj.friendly_name || name) : name;
             const category = vObj ? vObj.category : 'aircraft';
+            currentVehicleCategory = category;
             
             // Display loading info
             document.getElementById('vehicle-info-section').style.display = 'block';
@@ -989,6 +1163,10 @@
             document.getElementById('calc-len').innerHTML = `${printLen.toFixed(1)}<span>mm</span>`;
             document.getElementById('calc-hgt').innerHTML = `${printHgt.toFixed(1)}<span>mm</span>`;
             document.getElementById('calc-span').innerHTML = `${printSpan.toFixed(1)}<span>mm</span>`;
+            
+            if (partsGroup) {
+                partsGroup.scale.setScalar(scaleFactor / 100.0);
+            }
         }
 
         // Listeners for scaling inputs
@@ -1035,8 +1213,8 @@
             });
         });
 
-        // Trigger Model Generation
-        document.getElementById('btn-generate').addEventListener('click', async () => {
+        // Trigger Model Generation Helper Function
+        async function runGeneration(conflictAction = null) {
             if (!currentVehicle) return;
             
             const btn = document.getElementById('btn-generate');
@@ -1066,6 +1244,10 @@
                 excluded_parts: activeExcludedParts
             };
             
+            if (conflictAction) {
+                payload.conflict_action = conflictAction;
+            }
+            
             try {
                 const res = await fetch('/api/generate', {
                     method: 'POST',
@@ -1074,14 +1256,25 @@
                 });
                 const data = await res.json();
                 
+                if (data.status === 'conflict') {
+                    showConflictModal(data.folder_name);
+                    spinner.style.display = 'none';
+                    btnText.innerText = LANGUAGES[currentLang]['btn_generate'];
+                    btn.disabled = false;
+                    return;
+                }
+                
                 if (data.error) {
                     alert(LANGUAGES[currentLang]['error_generate_failed'] + data.error);
                 } else {
                     // Update lists to show active download buttons
                     generatedFiles = data.files;
                     generatedGroupsMap = data.groups_map;
-                    renderDownloadPartsList(generatedFiles, generatedGroupsMap);
-                    alert(LANGUAGES[currentLang]['generate_success']);
+                    generatedFolderName = data.folder_name;
+                    renderDownloadPartsList(generatedFiles, generatedGroupsMap, generatedFolderName);
+                    
+                    // Show success modal with absolute path
+                    showSuccessModal(data.output_dir);
                 }
             } catch (err) {
                 console.error("Error generating parts:", err);
@@ -1091,7 +1284,65 @@
                 spinner.style.display = 'none';
                 btnText.innerText = LANGUAGES[currentLang]['btn_generate'];
             }
+        }
+
+        // Trigger Model Generation Click Listener
+        document.getElementById('btn-generate').addEventListener('click', () => {
+            runGeneration();
         });
+
+        // Modal Controls
+        window.showConflictModal = function(folderName) {
+            const modal = document.getElementById('custom-confirm-modal');
+            const titleIcon = document.getElementById('modal-title-icon');
+            const titleText = document.getElementById('modal-title');
+            const bodyText = document.getElementById('modal-body-text');
+            const footer = document.getElementById('modal-footer-buttons');
+            
+            titleIcon.innerText = "⚠️";
+            titleText.innerText = LANGUAGES[currentLang]['conflict_title'];
+            
+            let msg = LANGUAGES[currentLang]['conflict_message_tmpl'].replace('{folder}', folderName);
+            bodyText.innerHTML = msg;
+            
+            footer.innerHTML = `
+                <button class="btn btn-danger" onclick="resolveConflict('overwrite')">${LANGUAGES[currentLang]['conflict_btn_overwrite']}</button>
+                <button class="btn btn-primary" onclick="resolveConflict('version')">${LANGUAGES[currentLang]['conflict_btn_version']}</button>
+                <button class="btn btn-secondary" onclick="closeCustomModal()">${LANGUAGES[currentLang]['conflict_btn_cancel']}</button>
+            `;
+            
+            modal.classList.add('active');
+        };
+        
+        window.showSuccessModal = function(absolutePath) {
+            const modal = document.getElementById('custom-confirm-modal');
+            const titleIcon = document.getElementById('modal-title-icon');
+            const titleText = document.getElementById('modal-title');
+            const bodyText = document.getElementById('modal-body-text');
+            const footer = document.getElementById('modal-footer-buttons');
+            
+            titleIcon.innerText = "✨";
+            titleText.innerText = LANGUAGES[currentLang]['generate_success_title'];
+            
+            let msg = LANGUAGES[currentLang]['generate_success_tmpl'].replace('{path}', absolutePath);
+            bodyText.innerHTML = msg;
+            
+            footer.innerHTML = `
+                <button class="btn btn-primary" onclick="closeCustomModal()">${LANGUAGES[currentLang]['btn_ok']}</button>
+            `;
+            
+            modal.classList.add('active');
+        };
+        
+        window.resolveConflict = function(action) {
+            closeCustomModal();
+            runGeneration(action);
+        };
+        
+        window.closeCustomModal = function() {
+            const modal = document.getElementById('custom-confirm-modal');
+            modal.classList.remove('active');
+        };
 
         // Render Parts List Sidebar DOM (Preview Mode)
         function renderPreviewPartsList(groupsMap, groupColors) {
@@ -1141,7 +1392,7 @@
             
             // Find all meshes belonging to this group
             const rawGroups = vehicleDetails.groups;
-            const groupsMap = classifyGroupsJS(rawGroups, selectedLevel);
+            const groupsMap = classifyGroupsJS(rawGroups, selectedLevel, currentVehicleCategory);
             const targetSubgroups = groupsMap[groupName] || [groupName];
             
             if (isChecked) {
@@ -1183,7 +1434,7 @@
         }
 
         // Render Parts List Sidebar DOM (Generated Download Mode)
-        function renderDownloadPartsList(files, groupsMap) {
+        function renderDownloadPartsList(files, groupsMap, folderName) {
             const container = document.getElementById('parts-list-container');
             document.getElementById('parts-count').innerText = `${files.length} ${LANGUAGES[currentLang]['parts_count_suffix_files']}`;
             
@@ -1208,6 +1459,7 @@
                 const colorHex = '#' + PART_COLORS[colorIndex % PART_COLORS.length].toString(16).padStart(6, '0');
                 
                 const translatedPartName = LANGUAGES[currentLang][partName] || partName.replace(/_/g, ' ').toUpperCase();
+                const fileUrl = folderName ? `/parts/${folderName}/${file}` : `/parts/${file}`;
                 
                 html += `
                     <div class="part-item">
@@ -1215,7 +1467,7 @@
                             <span class="part-color-dot" style="background-color: ${colorHex};"></span>
                             <span style="font-weight: 500;">${translatedPartName}</span>
                         </div>
-                        <a href="/parts/${file}" download="${file}" class="part-btn-dl">${LANGUAGES[currentLang]['part_download']}</a>
+                        <a href="${fileUrl}" download="${file}" class="part-btn-dl">${LANGUAGES[currentLang]['part_download']}</a>
                     </div>
                 `;
             });
@@ -1254,8 +1506,9 @@
             dirLight2.position.set(-1000, 500, -1000);
             scene.add(dirLight2);
             
-            const grid = new THREE.GridHelper(2000, 50, 0x8b5cf6, 0x1e1e2d);
-            grid.position.y = -100;
+            // Each unit represents 10cm. Grid is 50 units (5m) size, 50 divisions -> 1 unit per square.
+            const grid = new THREE.GridHelper(50, 50, 0x8b5cf6, 0x1e1e2d);
+            grid.position.y = 0;
             scene.add(grid);
             
             scene.add(partsGroup);
@@ -1315,6 +1568,7 @@
             vehicleVariants = {};
             generatedFiles = null;
             generatedGroupsMap = null;
+            generatedFolderName = null;
             document.getElementById('exploded-slider').value = 0;
             document.getElementById('explode-display').innerText = 0;
             
@@ -1355,8 +1609,17 @@
                 
                 partsGroup.add(obj);
                 
-                // Calculate modelMaxDim
+                // Align model's bottom Y-bound to Y = 0 (the grid floor)
                 const box = new THREE.Box3().setFromObject(obj);
+                const minY = box.min.y;
+                obj.position.y = -minY;
+                
+                // Shift partMeshes centers by same offset so explode coordinates align
+                partMeshes.forEach(part => {
+                    part.center.y -= minY;
+                });
+                
+                // Calculate modelMaxDim based on original bounds
                 const size = new THREE.Vector3();
                 box.getSize(size);
                 modelMaxDim = Math.max(size.x, size.y, size.z) || 1.0;
@@ -1368,6 +1631,9 @@
                 
                 // Color dynamically and generate side preview list
                 applySegmentation();
+                
+                // Apply visual scale group resizing
+                updateScaledDimensions();
                 
                 // Adjust focus
                 centerCameraOnModel();
@@ -1394,7 +1660,7 @@
             if (!partMeshes.length || !vehicleDetails) return;
             
             const rawGroups = vehicleDetails.groups;
-            const groupsMap = classifyGroupsJS(rawGroups, selectedLevel);
+            const groupsMap = classifyGroupsJS(rawGroups, selectedLevel, currentVehicleCategory);
             
             const groupKeys = Object.keys(groupsMap);
             const groupColors = {};
@@ -1403,7 +1669,7 @@
             });
             
             partMeshes.forEach(part => {
-                let matchedKey = (selectedLevel === 1) ? 'body' : ((selectedLevel === 2) ? 'fuselage' : 'default');
+                let matchedKey = (selectedLevel === 1 || selectedLevel === 2) ? 'body' : 'default';
                 const cleanPartName = part.name.replace(/[\s:]/g, '_').toLowerCase();
                 for (const key in groupsMap) {
                     const match = groupsMap[key].some(g => {
@@ -1445,17 +1711,37 @@
                     } else {
                         explodeDir.set(1.4, 0, 0); // Nose weapons push forward
                     }
+                } else if (groupNameLower.includes('turret')) {
+                    explodeDir.set(0, 1.2, 0); // Tank/ship turrets push up
+                } else if (groupNameLower.includes('barrel') || groupNameLower.includes('gun') || groupNameLower.includes('guns')) {
+                    explodeDir.set(1.4, 0, 0); // Barrels push forward
+                } else if (groupNameLower.includes('track_left') || partNameLower.includes('track_l')) {
+                    explodeDir.set(0, 0, 1.2);
+                } else if (groupNameLower.includes('track_right') || partNameLower.includes('track_r')) {
+                    explodeDir.set(0, 0, -1.2);
+                } else if (groupNameLower.includes('wheels_left') || partNameLower.includes('wheel_l') || partNameLower.includes('roller_l')) {
+                    explodeDir.set(0, 0, 1.5);
+                } else if (groupNameLower.includes('wheels_right') || partNameLower.includes('wheel_r') || partNameLower.includes('roller_r')) {
+                    explodeDir.set(0, 0, -1.5);
+                } else if (groupNameLower.includes('hatches') || partNameLower.includes('hatch')) {
+                    explodeDir.set(0, 1.5, 0);
+                } else if (groupNameLower.includes('radars') || partNameLower.includes('radar')) {
+                    explodeDir.set(0, 1.6, 0);
                 } else if (groupNameLower.includes('rudder') || partNameLower.includes('rudder') || partNameLower.includes('tail')) {
                     explodeDir.set(-1.2, 0.2, 0);
                 } else if (groupNameLower.includes('wing_left') || partNameLower.includes('wing_left') || partNameLower.includes('_l_') || partNameLower.endsWith('_l')) {
                     explodeDir.set(0, 0, 1.2);
                 } else if (groupNameLower.includes('wing_right') || partNameLower.includes('wing_right') || partNameLower.includes('_r_') || partNameLower.endsWith('_r')) {
                     explodeDir.set(0, 0, -1.2);
-                } else if (partNameLower.includes('gear_strut_left') || partNameLower.includes('wheel_left') || partNameLower.includes('gear_l') || partNameLower.includes('wheel_l')) {
+                } else if (groupNameLower.includes('wing_left_control_surfaces')) {
+                    explodeDir.set(-0.2, 0, 1.4);
+                } else if (groupNameLower.includes('wing_right_control_surfaces')) {
+                    explodeDir.set(-0.2, 0, -1.4);
+                } else if (partNameLower.includes('gear_strut_left') || partNameLower.includes('wheel_left') || partNameLower.includes('gear_l') || partNameLower.includes('wheel_l') || groupNameLower.includes('landing_gear_left')) {
                     explodeDir.set(0, -1.2, 0.8);
-                } else if (partNameLower.includes('gear_strut_right') || partNameLower.includes('wheel_right') || partNameLower.includes('gear_r') || partNameLower.includes('wheel_r')) {
+                } else if (partNameLower.includes('gear_strut_right') || partNameLower.includes('wheel_right') || partNameLower.includes('gear_r') || partNameLower.includes('wheel_r') || groupNameLower.includes('landing_gear_right')) {
                     explodeDir.set(0, -1.2, -0.8);
-                } else if (partNameLower.includes('gear_strut_tail') || partNameLower.includes('wheel_tail') || partNameLower.includes('gear_c') || partNameLower.includes('wheel_c')) {
+                } else if (partNameLower.includes('gear_strut_tail') || partNameLower.includes('wheel_tail') || partNameLower.includes('gear_c') || partNameLower.includes('wheel_c') || groupNameLower.includes('landing_gear_tail')) {
                     explodeDir.set(-0.5, -1.2, 0);
                 } else if (partNameLower.includes('elevator_left') || partNameLower.includes('elevator0')) {
                     explodeDir.set(-0.8, 0.2, 0.8);
@@ -1642,15 +1928,64 @@
         });
 
         // Initialize script
-        window.addEventListener('DOMContentLoaded', () => {
-            let savedLang = localStorage.getItem('preferred_lang');
-            if (!savedLang) {
-                savedLang = 'en';
+        window.toggleSidebar = function() {
+            const mainWorkspace = document.getElementById('main-workspace');
+            const sidebar = document.getElementById('sidebar-container');
+            
+            mainWorkspace.classList.toggle('sidebar-collapsed');
+            sidebar.classList.toggle('collapsed');
+            
+            const startTime = performance.now();
+            const transitionDuration = 300; // ms
+            
+            function animateResize() {
+                handleViewportResize();
+                if (performance.now() - startTime < transitionDuration) {
+                    requestAnimationFrame(animateResize);
+                } else {
+                    handleViewportResize();
+                }
             }
-            setLanguage(savedLang);
+            requestAnimationFrame(animateResize);
+        };
+        
+        window.handleViewportResize = function() {
+            const container = document.getElementById('canvas-container');
+            if (!container || !renderer || !camera) return;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            let savedLang = localStorage.getItem('explicit_lang_choice');
+            if (!savedLang) {
+                // Detect browser/OS system locale
+                const browserLang = navigator.language || navigator.userLanguage;
+                savedLang = (browserLang && browserLang.toLowerCase().startsWith('es')) ? 'es' : 'en';
+            }
+            setLanguage(savedLang, false);
             fetchVehicles();
             init3DViewport();
         });
     </script>
+    
+    <!-- Custom Modal Dialog (Conflict & Success) -->
+    <div id="custom-confirm-modal" class="custom-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-icon" id="modal-title-icon">⚠️</span>
+                <h3 id="modal-title">Directorio Existente</h3>
+            </div>
+            <div class="modal-body" id="modal-body-text">
+                <!-- Dynamic text -->
+            </div>
+            <div class="modal-footer" id="modal-footer-buttons">
+                <!-- Dynamic buttons -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>
