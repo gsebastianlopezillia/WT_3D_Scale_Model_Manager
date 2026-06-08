@@ -337,15 +337,16 @@ def parse_obj_metadata(raw_obj_path):
         "groups": filtered_groups
     }
 
-def classify_groups(raw_groups, level):
+def classify_groups(raw_groups, level, category):
     groups_map = {}
     if level == 1:
-        # Level 1: Decorativo (Monolítico)
+        # Level 1: Fused/monolithic vehicle body,
+        # but keeps optional/customizable parts separate: propeller, canopy, weapons, launchers, payload.
         propeller_groups = []
         canopy_groups = []
-        left_gear = []
-        right_gear = []
-        tail_gear = []
+        weapons_groups = []
+        launchers_groups = []
+        payload_groups = []
         body_groups = []
         
         for g in raw_groups:
@@ -354,70 +355,6 @@ def classify_groups(raw_groups, level):
                 propeller_groups.append(g)
             elif any(c in gl for c in ['blister', 'canopy', 'glass']):
                 canopy_groups.append(g)
-            elif 'gear_l' in gl or 'wheel_l' in gl:
-                left_gear.append(g)
-            elif 'gear_r' in gl or 'wheel_r' in gl:
-                right_gear.append(g)
-            elif 'gear_c' in gl or 'wheel_c' in gl:
-                tail_gear.append(g)
-            else:
-                body_groups.append(g)
-                
-        if body_groups: groups_map['body'] = body_groups
-        if propeller_groups: groups_map['propeller'] = propeller_groups
-        if canopy_groups: groups_map['canopy'] = canopy_groups
-        if left_gear: groups_map['landing_gear_left'] = left_gear
-        if right_gear: groups_map['landing_gear_right'] = right_gear
-        if tail_gear: groups_map['landing_gear_tail'] = tail_gear
-        
-    elif level == 2:
-        # Level 2: Estático (Intermedio)
-        fuselage_groups = []
-        wing_l_groups = []
-        wing_r_groups = []
-        rudder_groups = []
-        elev_l_groups = []
-        elev_r_groups = []
-        propeller_groups = []
-        canopy_groups = []
-        gear_strut_l = []
-        gear_wheel_l = []
-        gear_strut_r = []
-        gear_wheel_r = []
-        gear_strut_c = []
-        gear_wheel_c = []
-        weapons_groups = []
-        launchers_groups = []
-        payload_groups = []
-        
-        for g in raw_groups:
-            gl = g.lower()
-            if any(p in gl for p in ['prop', 'spinner']):
-                propeller_groups.append(g)
-            elif any(c in gl for c in ['blister', 'canopy', 'glass']):
-                canopy_groups.append(g)
-            elif 'wheel_l' in gl:
-                gear_wheel_l.append(g)
-            elif 'gear_l' in gl:
-                gear_strut_l.append(g)
-            elif 'wheel_r' in gl:
-                gear_wheel_r.append(g)
-            elif 'gear_r' in gl:
-                gear_strut_r.append(g)
-            elif 'wheel_c' in gl:
-                gear_wheel_c.append(g)
-            elif 'gear_c' in gl:
-                gear_strut_c.append(g)
-            elif 'rudder' in gl:
-                rudder_groups.append(g)
-            elif 'elevator0' in gl or 'elevator_l' in gl:
-                elev_l_groups.append(g)
-            elif 'elevator1' in gl or 'elevator_r' in gl:
-                elev_r_groups.append(g)
-            elif any(w in gl for w in ['wing_l', 'flap_l', 'flap1_l', 'flap2_l', 'aileron_l', 'slat_l', 'radiator1', 'radiator_left']):
-                wing_l_groups.append(g)
-            elif any(w in gl for w in ['wing_r', 'flap_r', 'flap1_r', 'flap2_r', 'aileron_r', 'slat_r', 'radiator2', 'radiator_right']):
-                wing_r_groups.append(g)
             elif any(arm in gl for arm in ['pylon', 'launcher', 'rack', 'pod', 'tube']) and 'track' not in gl:
                 launchers_groups.append(g)
             elif any(arm in gl for arm in ['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak']):
@@ -425,25 +362,174 @@ def classify_groups(raw_groups, level):
             elif any(arm in gl for arm in ['bomb', 'rocket', 'missile', 'torpedo', '210mm']):
                 payload_groups.append(g)
             else:
-                fuselage_groups.append(g)
+                body_groups.append(g)
                 
-        if fuselage_groups: groups_map['fuselage'] = fuselage_groups
-        if wing_l_groups: groups_map['wing_left'] = wing_l_groups
-        if wing_r_groups: groups_map['wing_right'] = wing_r_groups
-        if rudder_groups: groups_map['rudder'] = rudder_groups
-        if elev_l_groups: groups_map['elevator_left'] = elev_l_groups
-        if elev_r_groups: groups_map['elevator_right'] = elev_r_groups
+        if body_groups: groups_map['body'] = body_groups
         if propeller_groups: groups_map['propeller'] = propeller_groups
         if canopy_groups: groups_map['canopy'] = canopy_groups
-        if gear_strut_l: groups_map['gear_strut_left'] = gear_strut_l
-        if gear_wheel_l: groups_map['gear_wheel_left'] = gear_wheel_l
-        if gear_strut_r: groups_map['gear_strut_right'] = gear_strut_r
-        if gear_wheel_r: groups_map['gear_wheel_right'] = gear_wheel_r
-        if gear_strut_c: groups_map['gear_strut_tail'] = gear_strut_c
-        if gear_wheel_c: groups_map['gear_wheel_tail'] = gear_wheel_c
         if weapons_groups: groups_map['weapons'] = weapons_groups
         if launchers_groups: groups_map['launchers'] = launchers_groups
         if payload_groups: groups_map['payload'] = payload_groups
+        
+    elif level == 2:
+        if category == 'tank':
+            # Level 2: Tanks moving/functional parts
+            turret_groups = []
+            barrel_groups = []
+            track_left = []
+            track_right = []
+            wheels_left = []
+            wheels_right = []
+            hatch_groups = []
+            weapons_groups = []
+            launchers_groups = []
+            payload_groups = []
+            body_groups = []
+            
+            for g in raw_groups:
+                gl = g.lower()
+                if 'turret' in gl:
+                    turret_groups.append(g)
+                elif any(b in gl for b in ['gun_barrel', 'barrel', 'cannon']) and not any(mg in gl for mg in ['mg', 'mgun']):
+                    barrel_groups.append(g)
+                elif 'track' in gl:
+                    if any(l in gl for l in ['_l', 'l_', 'left']):
+                        track_left.append(g)
+                    else:
+                        track_right.append(g)
+                elif any(w in gl for w in ['wheel', 'roller', 'sprocket', 'idler', 'suspension']):
+                    if any(l in gl for l in ['_l', 'l_', 'left']):
+                        wheels_left.append(g)
+                    else:
+                        wheels_right.append(g)
+                elif any(h in gl for h in ['hatch', 'door', 'cover']):
+                    hatch_groups.append(g)
+                elif any(arm in gl for arm in ['pylon', 'launcher', 'rack', 'pod', 'tube']):
+                    launchers_groups.append(g)
+                elif any(arm in gl for arm in ['mg', 'mgun', 'machinegun', 'flak']):
+                    weapons_groups.append(g)
+                elif any(arm in gl for arm in ['bomb', 'rocket', 'missile', 'torpedo']):
+                    payload_groups.append(g)
+                else:
+                    body_groups.append(g)
+                    
+            if body_groups: groups_map['body'] = body_groups
+            if turret_groups: groups_map['turret'] = turret_groups
+            if barrel_groups: groups_map['barrel'] = barrel_groups
+            if track_left: groups_map['track_left'] = track_left
+            if track_right: groups_map['track_right'] = track_right
+            if wheels_left: groups_map['wheels_left'] = wheels_left
+            if wheels_right: groups_map['wheels_right'] = wheels_right
+            if hatch_groups: groups_map['hatches'] = hatch_groups
+            if weapons_groups: groups_map['weapons'] = weapons_groups
+            if launchers_groups: groups_map['launchers'] = launchers_groups
+            if payload_groups: groups_map['payload'] = payload_groups
+
+        elif category == 'ship':
+            # Level 2: Ships moving/functional parts
+            turrets = []
+            guns = []
+            propeller = []
+            rudder = []
+            radars = []
+            weapons_groups = []
+            launchers_groups = []
+            payload_groups = []
+            body_groups = []
+            
+            for g in raw_groups:
+                gl = g.lower()
+                if 'turret' in gl:
+                    turrets.append(g)
+                elif any(b in gl for b in ['gun', 'barrel', 'cannon']) and not any(mg in gl for mg in ['mg', 'mgun']):
+                    guns.append(g)
+                elif any(p in gl for p in ['prop', 'screw']):
+                    propeller.append(g)
+                elif 'rudder' in gl:
+                    rudder.append(g)
+                elif any(r in gl for r in ['radar', 'crane', 'director']):
+                    radars.append(g)
+                elif any(arm in gl for arm in ['launcher', 'torpedo_tube', 'rack', 'pod', 'tube']):
+                    launchers_groups.append(g)
+                elif any(arm in gl for arm in ['mg', 'mgun', 'flak', 'depth_charge_mount']):
+                    weapons_groups.append(g)
+                elif any(arm in gl for arm in ['torpedo', 'rocket', 'depth_charge']):
+                    payload_groups.append(g)
+                else:
+                    body_groups.append(g)
+                    
+            if body_groups: groups_map['body'] = body_groups
+            if turrets: groups_map['turrets'] = turrets
+            if guns: groups_map['guns'] = guns
+            if propeller: groups_map['propeller'] = propeller
+            if rudder: groups_map['rudder'] = rudder
+            if radars: groups_map['radars'] = radars
+            if weapons_groups: groups_map['weapons'] = weapons_groups
+            if launchers_groups: groups_map['launchers'] = launchers_groups
+            if payload_groups: groups_map['payload'] = payload_groups
+
+        else: # aircraft / other
+            # Level 2: Aircraft moving/functional parts
+            body_groups = []
+            wing_l_control = []
+            wing_r_control = []
+            rudder_groups = []
+            elev_l_groups = []
+            elev_r_groups = []
+            propeller_groups = []
+            canopy_groups = []
+            gear_left = []
+            gear_right = []
+            gear_tail = []
+            weapons_groups = []
+            launchers_groups = []
+            payload_groups = []
+            
+            for g in raw_groups:
+                gl = g.lower()
+                if any(p in gl for p in ['prop', 'spinner']):
+                    propeller_groups.append(g)
+                elif any(c in gl for c in ['blister', 'canopy', 'glass']):
+                    canopy_groups.append(g)
+                elif 'wheel_l' in gl or 'gear_l' in gl:
+                    gear_left.append(g)
+                elif 'wheel_r' in gl or 'gear_r' in gl:
+                    gear_right.append(g)
+                elif 'wheel_c' in gl or 'gear_c' in gl:
+                    gear_tail.append(g)
+                elif 'rudder' in gl:
+                    rudder_groups.append(g)
+                elif 'elevator0' in gl or 'elevator_l' in gl:
+                    elev_l_groups.append(g)
+                elif 'elevator1' in gl or 'elevator_r' in gl:
+                    elev_r_groups.append(g)
+                elif any(w in gl for w in ['flap_l', 'flap1_l', 'flap2_l', 'aileron_l', 'slat_l']):
+                    wing_l_control.append(g)
+                elif any(w in gl for w in ['flap_r', 'flap1_r', 'flap2_r', 'aileron_r', 'slat_r']):
+                    wing_r_control.append(g)
+                elif any(arm in gl for arm in ['pylon', 'launcher', 'rack', 'pod', 'tube']) and 'track' not in gl:
+                    launchers_groups.append(g)
+                elif any(arm in gl for arm in ['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak']):
+                    weapons_groups.append(g)
+                elif any(arm in gl for arm in ['bomb', 'rocket', 'missile', 'torpedo', '210mm']):
+                    payload_groups.append(g)
+                else:
+                    body_groups.append(g)
+                    
+            if body_groups: groups_map['body'] = body_groups
+            if propeller_groups: groups_map['propeller'] = propeller_groups
+            if canopy_groups: groups_map['canopy'] = canopy_groups
+            if gear_left: groups_map['landing_gear_left'] = gear_left
+            if gear_right: groups_map['landing_gear_right'] = gear_right
+            if gear_tail: groups_map['landing_gear_tail'] = gear_tail
+            if rudder_groups: groups_map['rudder'] = rudder_groups
+            if elev_l_groups: groups_map['elevator_left'] = elev_l_groups
+            if elev_r_groups: groups_map['elevator_right'] = elev_r_groups
+            if wing_l_control: groups_map['wing_left_control_surfaces'] = wing_l_control
+            if wing_r_control: groups_map['wing_right_control_surfaces'] = wing_r_control
+            if weapons_groups: groups_map['weapons'] = weapons_groups
+            if launchers_groups: groups_map['launchers'] = launchers_groups
+            if payload_groups: groups_map['payload'] = payload_groups
         
     else:
         # Level 3: Funcional (Máxima Segmentación)
@@ -678,12 +764,19 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(404, "Preview model not found")
                 
         elif path.startswith('/parts/'):
-            # Serve files from output directory
+            # Serve files from output directory, allowing subdirectories
             rel_file = path[7:] # remove /parts/
-            clean_file = os.path.basename(rel_file)
-            target_path = os.path.join(OUTPUT_ROOT, 'split_parts', clean_file)
-            
-            if os.path.exists(target_path):
+            rel_file = urllib.parse.unquote(rel_file).replace('\\', '/')
+            if '..' in rel_file or rel_file.startswith('/'):
+                self.send_error(400, "Invalid path")
+                return
+                
+            target_path = os.path.normpath(os.path.join(OUTPUT_ROOT, 'split_parts', rel_file))
+            if not target_path.startswith(os.path.normpath(os.path.join(OUTPUT_ROOT, 'split_parts'))):
+                self.send_error(403, "Access Denied")
+                return
+                
+            if os.path.exists(target_path) and os.path.isfile(target_path):
                 with open(target_path, 'rb') as f:
                     content_bytes = f.read()
                 self.send_response_compressed(content_bytes, 'application/octet-stream', 'no-cache')
@@ -717,12 +810,48 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
             scale_mode = params.get('scale_mode') # 'wingspan' or 'length' or 'multiplier'
             scale_value = float(params.get('scale_value', 1.0))
             level = int(params.get('level', 3)) # 1, 2, or 3
+            conflict_action = params.get('conflict_action') # None, 'overwrite', 'version'
             
             if not model or not grp:
                 self.send_error(400, "Missing model or grp parameters")
                 return
                 
             try:
+                # 1. Determine date string and subfolder name
+                from datetime import datetime
+                date_str = datetime.now().strftime('%Y-%m-%d')
+                folder_base = f"{model}_lvl{level}_{date_str}"
+                
+                # Check for existence and handle conflicts
+                split_parts_root = os.path.join(OUTPUT_ROOT, 'split_parts')
+                os.makedirs(split_parts_root, exist_ok=True)
+                
+                folder_name = folder_base
+                target_dir = os.path.join(split_parts_root, folder_name)
+                
+                if os.path.exists(target_dir):
+                    if conflict_action is None:
+                        # Return conflict status
+                        self.send_response_compressed(json.dumps({
+                            "status": "conflict",
+                            "folder_name": folder_name
+                        }).encode('utf-8'), 'application/json')
+                        return
+                    elif conflict_action == 'overwrite':
+                        shutil.rmtree(target_dir)
+                        os.makedirs(target_dir, exist_ok=True)
+                    elif conflict_action == 'version':
+                        version = 2
+                        while True:
+                            folder_name = f"{folder_base}_v{version}"
+                            target_dir = os.path.join(split_parts_root, folder_name)
+                            if not os.path.exists(target_dir):
+                                break
+                            version += 1
+                        os.makedirs(target_dir, exist_ok=True)
+                else:
+                    os.makedirs(target_dir, exist_ok=True)
+                
                 # Try cache first!
                 metadata, cached_obj_path = get_cached_model_details(model)
                 raw_obj = cached_obj_path
@@ -749,7 +878,8 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                     scale_factor = scale_value * 1000.0 # Convert meters to mm
                     
                 # 3. Classify groups based on level
-                groups_map = classify_groups(metadata["groups"], level)
+                category = vehicle_index.get(model, {}).get("category", "aircraft")
+                groups_map = classify_groups(metadata["groups"], level, category)
                 
                 # Filter out excluded parts
                 excluded_parts = params.get('excluded_parts', [])
@@ -760,12 +890,6 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                     if active_groups:
                         filtered_groups_map[filename] = active_groups
                 
-                # 4. Clear and recreate output dir
-                split_dir = os.path.join(OUTPUT_ROOT, 'split_parts')
-                if os.path.exists(split_dir):
-                    shutil.rmtree(split_dir)
-                os.makedirs(split_dir, exist_ok=True)
-                
                 # Copy mtl file if it exists in base
                 if temp_dir:
                     src_mtl = os.path.join(temp_dir, f"{model}.mtl")
@@ -773,7 +897,7 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                         shutil.copy(src_mtl, os.path.join(OUTPUT_ROOT, f"{model}.mtl"))
                     
                 # 5. Run segmenter
-                files = run_segmentation_pipeline(raw_obj, split_dir, filtered_groups_map, scale_factor)
+                files = run_segmentation_pipeline(raw_obj, target_dir, filtered_groups_map, scale_factor)
                 
                 # Cleanup
                 if temp_dir and os.path.exists(temp_dir):
@@ -788,7 +912,9 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                         "wingspan": original_wingspan * scale_factor
                     },
                     "files": files,
-                    "groups_map": groups_map
+                    "groups_map": groups_map,
+                    "folder_name": folder_name,
+                    "output_dir": os.path.abspath(target_dir)
                 }
                 response_bytes = json.dumps(response).encode('utf-8')
                 self.send_response_compressed(response_bytes, 'application/json')
