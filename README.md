@@ -52,6 +52,15 @@ A web page will automatically open in your browser. If it doesn't, open your bro
 
 ## 📐 3D Printing & Scale Modeling Guide
 
+### ⚠️ Important Notice: Game Meshes vs. Printable 3D Models
+
+> [!WARNING]
+> **PLEASE READ BEFORE PRINTING TO AVOID FRUSTRATION:**
+> The 3D models extracted from the game are originally designed for **real-time 3D rendering**, not for physical 3D printing.
+> * **What this means:** Game models contain "shell" geometries (zero-thickness surfaces like wings, plates, or flags), non-manifold edges, open boundaries, and intersecting meshes. Slicing software (such as Cura, PrusaSlicer, OrcaSlicer, or Bambu Studio) requires "watertight" (solid manifold) volume geometries to slice correctly.
+> * **The Purpose of this Tool:** These generated `.obj` files serve as an **excellent, highly accurate starting base** so you don't have to model the vehicle from scratch. 
+> * **Recommended Workflow:** Before sending the files to your slicer, we highly recommend opening the generated `.obj` files in 3D modeling/repair software (like **Blender**, **Autodesk Meshmixer**, **Windows 3D Builder**, or **Fusion 360**) to close open meshes, solidify thin sheets (add thickness to wings, armor panels, and propellers), merge intersections, and run automatic mesh repair routines (e.g., "Make Solid" or "Shrinkwrap" tools) to make them manifold and fully ready for successful printing.
+
 Once inside the web interface, you'll see a state-of-the-art interactive visual workspace:
 
 ### 1. Search and Select your Vehicle
@@ -160,6 +169,15 @@ Se abrirá automáticamente una ventana en tu navegador web. Si no lo hace, abre
 ---
 
 ## 📐 Guía de Uso para Impresión 3D y Modelismo
+
+### ⚠️ Nota Importante: Modelos de Juego (Mallas de Renderizado) vs. Modelos Imprimibles
+
+> [!WARNING]
+> **POR FAVOR, LEE ESTO ANTES DE IMPRIMIR PARA EVITAR FRUSTACIONES:**
+> Los modelos 3D extraídos del juego están diseñados originalmente para **renderizado en tiempo real** (gráficos de computadora), no para impresión 3D física.
+> * **Qué significa esto:** Los modelos del juego contienen geometrías tipo "cáscara" (superficies con grosor cero, como alas, chapas o alerones), bordes no maniformes, mallas abiertas e intersecciones internas. Los laminadores (como Cura, PrusaSlicer, OrcaSlicer o Bambu Studio) necesitan volúmenes cerrados y herméticos ("watertight" o sólidos maniformes) para rebanar correctamente.
+> * **El propósito de esta herramienta:** Los archivos `.obj` generados te sirven como una **base tridimensional excelente y sumamente precisa** para que no tengas que diseñar el modelo desde cero.
+> * **Flujo de trabajo recomendado:** Antes de mandar las piezas al laminador, te recomendamos abrir los archivos `.obj` generados en un software de reparación o modelado 3D (como **Blender**, **Autodesk Meshmixer**, **Windows 3D Builder** o **Fusion 360**) para cerrar las mallas abiertas, darles grosor físico a las superficies delgadas (como hélices, alerones o chapas), fusionar intersecciones y realizar una reparación de malla sólida (usando herramientas como "Make Solid" o "Shrinkwrap") para dejarlas listas para una impresión exitosa.
 
 Una vez dentro de la interfaz web, tendrás un panel visual interactivo de última generación:
 
