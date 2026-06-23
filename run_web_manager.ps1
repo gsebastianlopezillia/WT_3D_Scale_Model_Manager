@@ -15,20 +15,6 @@ if (-not (Test-Path -Path $configPath) -and (Test-Path -Path $configExamplePath)
     Copy-Item -Path $configExamplePath -Destination $configPath
 }
 
-# 2. Check and clone dependencies if missing
-$toolsGitPath = Join-Path -Path $PSScriptRoot -ChildPath "tools_git"
-$dagorExplorerPath = Join-Path -Path $PSScriptRoot -ChildPath "dagor_explorer"
-
-if (-not (Test-Path -Path $toolsGitPath)) {
-    Write-Host "Dependency 'tools_git' is missing. Cloning from repository..." -ForegroundColor Yellow
-    git clone https://github.com/klensy/wt-tools.git "$toolsGitPath"
-}
-
-if (-not (Test-Path -Path $dagorExplorerPath)) {
-    Write-Host "Dependency 'dagor_explorer' is missing. Cloning from repository..." -ForegroundColor Yellow
-    git clone https://github.com/quentin-dh/Dagor-Asset-Explorer.git "$dagorExplorerPath"
-}
-
 # 2. Start a hidden background process to launch the browser in 2 seconds
 Write-Host "Scheduling browser launch..." -ForegroundColor Yellow
 Start-Process powershell.exe -ArgumentList "-Command", "Start-Sleep -Seconds 2; Start-Process 'http://localhost:8000'" -WindowStyle Hidden

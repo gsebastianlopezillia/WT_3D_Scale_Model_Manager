@@ -39,7 +39,7 @@ The program needs to know where your War Thunder is installed to read the 3D mod
 5. Save the file and close it.
 
 ### Step 4: Run the Manager!
-* On Windows, right-click on the `run_web_manager.ps1` file and choose **Run with PowerShell**.
+* On Windows, simply double-click the `start.bat` file. This will automatically verify python packages and launch the server.
 * *Or, open a command prompt in the project folder and type:*
   ```bash
   python web_server.py
@@ -157,7 +157,7 @@ El programa necesita saber dónde está instalado tu War Thunder para leer los m
 5. Guarda el archivo y ciérralo.
 
 ### Paso 4: ¡A arrancar el programa!
-* En Windows, haz clic derecho sobre el archivo `run_web_manager.ps1` y selecciona **Ejecutar con PowerShell**.
+* En Windows, simplemente haz doble clic en el archivo `start.bat`. Esto verificará los paquetes de Python e iniciará el servidor de forma automática.
 * *O si lo prefieres, abre una consola de comandos en la carpeta y escribe:*
   ```bash
   python web_server.py

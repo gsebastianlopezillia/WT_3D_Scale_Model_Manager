@@ -14,9 +14,8 @@ __pycache__/
 
 # External tools and cloned repositories
 tools/
-tools_git/
 wt_ext_cli/
-dagor_explorer/
+
 
 # Temporary files, logs, and zips
 wt-tools.zip

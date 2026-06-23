@@ -2,16 +2,16 @@ import os
 import sys
 import json
 
-# Add dagor_explorer/src/dae to python path
+# Add local vendored libraries to python path
+sys.path.append(os.path.abspath(r'.\lib\dae'))
+
 try:
     from parse.gameres import GameResDesc
 except ModuleNotFoundError as e:
     print("\n" + "="*80)
-    print("ERROR: Required subfolder 'dagor_explorer' not found in path.")
+    print("ERROR: Missing required vendored dependencies in the 'lib/' folder.")
     print(f"Details: {e}")
-    print("If you cloned this repository, ensure submodules are updated:")
-    print("    git submodule update --init --recursive")
-    print("Or if you downloaded the ZIP, run 'run_web_manager.ps1' to clone them automatically.")
+    print("Please make sure the repository was cloned completely with the 'lib/' directory.")
     print("="*80 + "\n")
     sys.exit(1)
 

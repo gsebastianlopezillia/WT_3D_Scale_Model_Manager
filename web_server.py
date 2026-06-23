@@ -7,9 +7,9 @@ import socketserver
 import urllib.parse
 import threading
 
-# Add dagor_explorer/src/dae and tools_git/src to python path
-sys.path.append(os.path.abspath(r'.\dagor_explorer\src\dae'))
-sys.path.append(os.path.abspath(r'.\tools_git\src'))
+# Add local vendored libraries to python path
+sys.path.append(os.path.abspath(r'.\lib\dae'))
+sys.path.append(os.path.abspath(r'.\lib'))
 
 try:
     from parse.gameres import GameResourcePack, GameResDesc
@@ -19,11 +19,9 @@ try:
     from wt_tools.formats.vromfs_parser import vromfs_file
 except ModuleNotFoundError as e:
     print("\n" + "="*80)
-    print("ERROR: Required subfolder 'dagor_explorer' or 'tools_git' not found in path.")
+    print("ERROR: Missing required vendored dependencies in the 'lib/' folder.")
     print(f"Details: {e}")
-    print("If you cloned this repository, ensure submodules are updated:")
-    print("    git submodule update --init --recursive")
-    print("Or if you downloaded the ZIP, run 'run_web_manager.ps1' to clone them automatically.")
+    print("Please make sure the repository was cloned completely with the 'lib/' directory.")
     print("="*80 + "\n")
     sys.exit(1)
 import csv
@@ -31,24 +29,142 @@ import csv
 PORT = 8000
 INDEX_FILE = 'vehicles_index.json'
 
-# Load path settings from config.json if it exists, otherwise use defaults
-config = {
-    "wt_root": r'C:\Program Files (x86)\Steam\steamapps\common\War Thunder',
-    "output_root": r'.\Bf109_Raw_Asset'
-}
+# Load path settings from config.json if it exists, otherwise resolve it
+WT_ROOT = None
+OUTPUT_ROOT = os.path.abspath(r'.\Bf109_Raw_Asset')
+
+def get_registry_value(key, subkey, value):
+    try:
+        import winreg
+        reg_key = winreg.OpenKey(key, subkey)
+        val, _ = winreg.QueryValueEx(reg_key, value)
+        return val
+    except Exception:
+        return None
+
+def detect_wt_path():
+    # 1. Check registry for Gaijin launcher
+    try:
+        import winreg
+        for key in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
+            for subkey in [r"Software\Gaijin\WarThunder", r"Software\Gaijin\War Thunder", r"Software\Gaijin\Launcher"]:
+                for val_name in ["Path", "Location", "InstallPath"]:
+                    path = get_registry_value(key, subkey, val_name)
+                    if path and os.path.exists(os.path.join(path, "content")):
+                        return path
+    except Exception:
+        pass
+
+    # 2. Check registry for Steam installation
+    try:
+        import winreg
+        steam_path = get_registry_value(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam", "SteamPath")
+        if steam_path:
+            steam_wt = os.path.join(steam_path, "steamapps", "common", "War Thunder")
+            if os.path.exists(os.path.join(steam_wt, "content")):
+                return steam_wt
+    except Exception:
+        pass
+
+    # 3. Check common hardcoded paths
+    common_paths = [
+        r"C:\Program Files (x86)\Steam\steamapps\common\War Thunder",
+        r"D:\SteamLibrary\steamapps\common\War Thunder",
+        r"E:\SteamLibrary\steamapps\common\War Thunder",
+        r"C:\Games\War Thunder",
+        r"D:\Games\War Thunder",
+        r"D:\Juegos\steam\steamapps\common\War Thunder",
+    ]
+    for p in common_paths:
+        if os.path.exists(os.path.join(p, "content")):
+            return p
+
+    return None
+
+def prompt_wt_path():
+    # Try using tkinter folder dialog (built-in)
+    try:
+        import tkinter as tk
+        from tkinter import filedialog, messagebox
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        
+        # Show prompt info box
+        messagebox.showinfo(
+            "Configuración inicial", 
+            "No se detectó War Thunder de forma automática.\nA continuación, selecciona la carpeta principal donde tienes instalado el juego (donde está launcher.exe)."
+        )
+        
+        folder = filedialog.askdirectory(title="Selecciona la carpeta principal de War Thunder (donde está launcher.exe)")
+        root.destroy()
+        if folder:
+            folder = os.path.normpath(folder)
+            if os.path.exists(os.path.join(folder, "content")):
+                return folder
+            else:
+                # Error popup
+                root_err = tk.Tk()
+                root_err.withdraw()
+                messagebox.showerror(
+                    "Carpeta Incorrecta", 
+                    "La carpeta seleccionada no es válida (debe contener la subcarpeta 'content')."
+                )
+                root_err.destroy()
+    except Exception:
+        pass
+        
+    # Fallback to console input
+    while True:
+        print("\n" + "="*80)
+        print("CONFIGURACIÓN DE RUTA DE WAR THUNDER")
+        print("="*80)
+        path = input("Introduce la ruta completa de la carpeta de War Thunder (o escribe 'exit' para salir): ").strip()
+        if not path or path.lower() == 'exit':
+            return None
+        path = os.path.normpath(path)
+        if os.path.exists(os.path.join(path, "content")):
+            return path
+        print("Error: La ruta especificada no parece contener War Thunder (falta la carpeta 'content').")
+
+# Load existing config or initialize
+config_loaded = False
 if os.path.exists('config.json'):
     try:
         with open('config.json', 'r', encoding='utf-8') as f:
             user_config = json.load(f)
-            if "wt_root" in user_config: config["wt_root"] = user_config["wt_root"]
-            elif "WT_ROOT" in user_config: config["wt_root"] = user_config["WT_ROOT"]
-            if "output_root" in user_config: config["output_root"] = user_config["output_root"]
-            elif "OUTPUT_ROOT" in user_config: config["output_root"] = user_config["OUTPUT_ROOT"]
+            wt_root_cand = user_config.get("wt_root") or user_config.get("WT_ROOT")
+            if wt_root_cand and os.path.exists(os.path.join(wt_root_cand, "content")):
+                WT_ROOT = wt_root_cand
+                config_loaded = True
+                if "output_root" in user_config: OUTPUT_ROOT = os.path.abspath(user_config["output_root"])
+                elif "OUTPUT_ROOT" in user_config: OUTPUT_ROOT = os.path.abspath(user_config["OUTPUT_ROOT"])
     except Exception as e:
         print(f"Error loading config.json: {e}")
 
-WT_ROOT = config["wt_root"]
-OUTPUT_ROOT = os.path.abspath(config["output_root"])
+if not config_loaded:
+    # Attempt auto detection
+    detected = detect_wt_path()
+    if detected:
+        WT_ROOT = detected
+        print(f"War Thunder detectado automáticamente en: {WT_ROOT}")
+    else:
+        # Prompt user
+        WT_ROOT = prompt_wt_path()
+        if not WT_ROOT:
+            print("Configuración cancelada. Saliendo...")
+            sys.exit(1)
+            
+    # Save new config
+    try:
+        with open('config.json', 'w', encoding='utf-8') as f:
+            json.dump({
+                "wt_root": WT_ROOT,
+                "output_root": r".\Bf109_Raw_Asset"
+            }, f, indent=4)
+        print("Configuración inicial guardada en config.json")
+    except Exception as e:
+        print(f"Error escribiendo config.json: {e}")
 
 # Global state
 indexing_status = {
