@@ -11,11 +11,21 @@ import threading
 sys.path.append(os.path.abspath(r'.\dagor_explorer\src\dae'))
 sys.path.append(os.path.abspath(r'.\tools_git\src'))
 
-from parse.gameres import GameResourcePack, GameResDesc
-from parse.material import DDSxTexturePack2
-from util.assetcacher import AssetCacher
-from parse.realres import DynModel
-from wt_tools.formats.vromfs_parser import vromfs_file
+try:
+    from parse.gameres import GameResourcePack, GameResDesc
+    from parse.material import DDSxTexturePack2
+    from util.assetcacher import AssetCacher
+    from parse.realres import DynModel
+    from wt_tools.formats.vromfs_parser import vromfs_file
+except ModuleNotFoundError as e:
+    print("\n" + "="*80)
+    print("ERROR: Required subfolder 'dagor_explorer' or 'tools_git' not found in path.")
+    print(f"Details: {e}")
+    print("If you cloned this repository, ensure submodules are updated:")
+    print("    git submodule update --init --recursive")
+    print("Or if you downloaded the ZIP, run 'run_web_manager.ps1' to clone them automatically.")
+    print("="*80 + "\n")
+    sys.exit(1)
 import csv
 
 PORT = 8000
@@ -63,10 +73,26 @@ if os.path.exists(CACHE_DIR):
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 def get_grp(grp_path):
-    if grp_path not in grp_cache:
-        print(f"Opening GRP archive (cold load): {grp_path}")
-        grp_cache[grp_path] = GameResourcePack(grp_path)
-    return grp_cache[grp_path]
+    resolved_path = grp_path
+    if not os.path.exists(grp_path):
+        # Reconstruct path relative to WT_ROOT by searching for 'content'
+        norm_path = os.path.normpath(grp_path)
+        parts = norm_path.split(os.sep)
+        if 'content' in parts:
+            content_idx = parts.index('content')
+            rel_path = os.sep.join(parts[content_idx:])
+            candidate = os.path.join(WT_ROOT, rel_path)
+            if os.path.exists(candidate):
+                resolved_path = candidate
+        else:
+            candidate = os.path.join(WT_ROOT, grp_path)
+            if os.path.exists(candidate):
+                resolved_path = candidate
+
+    if resolved_path not in grp_cache:
+        print(f"Opening GRP archive (cold load): {resolved_path} (original requested: {grp_path})")
+        grp_cache[resolved_path] = GameResourcePack(resolved_path)
+    return grp_cache[resolved_path]
 
 def get_cached_model_details(model_name):
     obj_cache_path = os.path.join(CACHE_DIR, f"{model_name}.obj")
