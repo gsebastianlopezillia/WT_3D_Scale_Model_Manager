@@ -5,7 +5,10 @@ import shutil
 import http.server
 import socketserver
 import urllib.parse
+import urllib.request
+import ssl
 import threading
+import tempfile
 
 # Add local vendored libraries to python path
 sys.path.append(os.path.abspath(r'.\lib\dae'))
@@ -174,6 +177,10 @@ indexing_status = {
     "count": 0
 }
 vehicle_index = {}
+
+# Keep-Alive Heartbeat variables for auto-shutdown
+last_ping_time = None
+ping_received = False
 
 # Caching systems
 grp_cache = {}
@@ -413,6 +420,9 @@ def scan_vehicles_thread():
     indexing_status["indexing"] = False
     print(f"Background indexing completed. Found {len(vehicle_index)} dynamic models.")
 
+# Lock to serialize model extraction (prevents concurrent temp_export conflicts)
+_model_extract_lock = threading.Lock()
+
 def get_temp_raw_model(model_name, grp_path):
     # Load and cache skeletons in this GRP using cached GRP loader
     grp = get_grp(grp_path)
@@ -425,7 +435,7 @@ def get_temp_raw_model(model_name, grp_path):
             except Exception:
                 pass
                 
-    # Get model and export it to a temp dir
+    # Get model and export it to a unique temp dir
     res_id = grp.getRealResId(model_name)
     dyn_model = grp.getRealResource(res_id)
     dyn_model.computeData()
@@ -433,10 +443,7 @@ def get_temp_raw_model(model_name, grp_path):
     mdl = dyn_model.getModel(0)
     mdl._Model__exportName = model_name
     
-    temp_dir = os.path.abspath(r'.\temp_export')
-    if os.path.exists(temp_dir):
-        shutil.rmtree(temp_dir)
-    os.makedirs(temp_dir, exist_ok=True)
+    temp_dir = tempfile.mkdtemp(prefix=f"wt_{model_name}_", dir=os.path.abspath('.'))
     
     mdl.exportObj(temp_dir, exportTexture=False)
     
@@ -822,6 +829,14 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
         path = parsed_url.path
         query = urllib.parse.parse_qs(parsed_url.query)
         
+        if path == '/api/ping':
+            global last_ping_time, ping_received
+            import time
+            last_ping_time = time.time()
+            ping_received = True
+            self.send_response_compressed(json.dumps({"status": "ok"}).encode('utf-8'), 'application/json', 'no-cache')
+            return
+            
         if path == '/api/vehicles':
             response = {
                 "indexing": indexing_status["indexing"],
@@ -832,6 +847,58 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
             }
             content_bytes = json.dumps(response).encode('utf-8')
             self.send_response_compressed(content_bytes, 'application/json', 'no-cache')
+            
+        elif path == '/api/thumbnail':
+            name = query.get('name', [''])[0]
+            if not name:
+                self.send_error(400, "Missing name parameter")
+                return
+                
+            name = os.path.basename(name)
+            if not name.endswith('.png'):
+                name += '.png'
+                
+            thumb_dir = os.path.join(OUTPUT_ROOT, 'thumbnails')
+            os.makedirs(thumb_dir, exist_ok=True)
+            local_path = os.path.join(thumb_dir, name)
+            
+            if os.path.exists(local_path):
+                try:
+                    file_size = os.path.getsize(local_path)
+                    if file_size == 0:
+                        # Negative cache: thumbnail doesn't exist in datamine, serve empty instantly
+                        self.send_response_compressed(b'', 'image/png', 'public, max-age=86400')
+                        return
+                    with open(local_path, 'rb') as f:
+                        content_bytes = f.read()
+                    self.send_response_compressed(content_bytes, 'image/png', 'public, max-age=86400')
+                    return
+                except Exception as e:
+                    print(f"Error reading cached thumbnail {name}: {e}")
+                    
+            url = f"https://raw.githubusercontent.com/gszabi99/War-Thunder-Datamine/master/atlases.vromfs.bin_u/units/{name}"
+            try:
+                context = ssl._create_unverified_context()
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, context=context, timeout=5) as response:
+                    content_bytes = response.read()
+                    
+                with open(local_path, 'wb') as f:
+                    f.write(content_bytes)
+                    
+                self.send_response_compressed(content_bytes, 'image/png', 'public, max-age=86400')
+            except Exception as e:
+                print(f"Error fetching thumbnail {name} from datamine: {e}")
+                # Cache negative result as an empty file to prevent repeated backend queries
+                try:
+                    with open(local_path, 'wb') as f:
+                        pass
+                except Exception as cache_err:
+                    print(f"Failed to cache empty thumbnail for {name}: {cache_err}")
+                
+                # Respond with 200 OK and empty body so client-side image decoding fails
+                # and triggers the fallback SVG cleanly without throwing red 404 console errors.
+                self.send_response_compressed(b'', 'image/png', 'public, max-age=86400')
             
         elif path == '/api/details':
             model = query.get('model', [''])[0]
@@ -850,15 +917,26 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_response_compressed(content_bytes, 'application/json', 'private, max-age=3600')
                     return
                 
-                # If cache miss, extract normally
-                raw_obj, temp_dir = get_temp_raw_model(model, grp)
-                metadata = parse_obj_metadata(raw_obj)
-                
-                # Save to cache
-                save_model_to_cache(model, raw_obj, metadata)
-                
-                if temp_dir and os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir) # cleanup temp
+                # If cache miss, extract with lock to prevent concurrent temp conflicts
+                with _model_extract_lock:
+                    # Re-check cache after acquiring lock (another thread may have populated it)
+                    metadata, cached_obj_path = get_cached_model_details(model)
+                    if metadata and cached_obj_path:
+                        content_bytes = json.dumps(metadata).encode('utf-8')
+                        self.send_response_compressed(content_bytes, 'application/json', 'private, max-age=3600')
+                        return
+                    
+                    raw_obj, temp_dir = get_temp_raw_model(model, grp)
+                    metadata = parse_obj_metadata(raw_obj)
+                    
+                    # Save to cache
+                    save_model_to_cache(model, raw_obj, metadata)
+                    
+                    if temp_dir and os.path.exists(temp_dir):
+                        try:
+                            shutil.rmtree(temp_dir)
+                        except OSError:
+                            pass  # will be cleaned up later
                 
                 content_bytes = json.dumps(metadata).encode('utf-8')
                 self.send_response_compressed(content_bytes, 'application/json', 'private, max-age=3600')
@@ -880,13 +958,20 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                     if not grp:
                         self.send_error(400, "Missing grp parameter for extraction")
                         return
-                    # Extraction (cache miss)
-                    raw_obj, temp_dir = get_temp_raw_model(model, grp)
-                    metadata = parse_obj_metadata(raw_obj)
-                    save_model_to_cache(model, raw_obj, metadata)
-                    cached_obj_path = os.path.join(CACHE_DIR, f"{model}.obj")
-                    if temp_dir and os.path.exists(temp_dir):
-                        shutil.rmtree(temp_dir)
+                    # Extraction (cache miss) - use lock
+                    with _model_extract_lock:
+                        # Re-check cache after acquiring lock
+                        metadata, cached_obj_path = get_cached_model_details(model)
+                        if not cached_obj_path or not os.path.exists(cached_obj_path):
+                            raw_obj, temp_dir = get_temp_raw_model(model, grp)
+                            metadata = parse_obj_metadata(raw_obj)
+                            save_model_to_cache(model, raw_obj, metadata)
+                            cached_obj_path = os.path.join(CACHE_DIR, f"{model}.obj")
+                            if temp_dir and os.path.exists(temp_dir):
+                                try:
+                                    shutil.rmtree(temp_dir)
+                                except OSError:
+                                    pass
                 
                 # Serve the cached obj file directly
                 with open(cached_obj_path, 'rb') as f:
@@ -1063,16 +1148,41 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self.send_response_compressed(json.dumps({"error": str(e)}).encode('utf-8'), 'application/json')
 
+def watchdog_thread():
+    global last_ping_time, ping_received
+    import time
+    # Wait for the first ping (maximum 15 seconds)
+    start_wait = time.time()
+    while not ping_received:
+        if time.time() - start_wait > 15:
+            print("Watchdog: Browser first ping timeout. Shutting down server...")
+            os._exit(0)
+        time.sleep(1)
+        
+    # Once first ping is received, check last_ping_time periodically
+    while True:
+        time.sleep(2)
+        if time.time() - last_ping_time > 8: # 8 seconds threshold
+            print("Watchdog: Browser tab closed. Shutting down server...")
+            os._exit(0)
+
 def main():
+    # Start background watchdog thread
+    watchdog = threading.Thread(target=watchdog_thread)
+    watchdog.daemon = True
+    watchdog.start()
+
     # Start background indexing thread
     indexing_thread = threading.Thread(target=scan_vehicles_thread)
     indexing_thread.daemon = True
     indexing_thread.start()
     
-    # Run HTTP Server
+    # Run HTTP Server (threaded so thumbnail fetches don't block model loading)
     handler = WebManagerHandler
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), handler) as httpd:
+    class ThreadedHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+        allow_reuse_address = True
+        daemon_threads = True
+    with ThreadedHTTPServer(("", PORT), handler) as httpd:
         print(f"Web Manager Server running at http://localhost:{PORT}")
         try:
             httpd.serve_forever()

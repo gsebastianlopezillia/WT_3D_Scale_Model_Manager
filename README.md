@@ -14,39 +14,25 @@ Don't worry, you don't need any coding skills to run this tool. Just follow thes
 1. Download and install **Python 3.10 or higher** from the official website: [python.org](https://www.python.org/downloads/).
 2. **⚠️ VERY IMPORTANT:** During installation, make sure to check the box that says **"Add Python to PATH"** before clicking *Install Now*. If you miss this, the program will not be executable from the command line.
 
-### Step 2: Download this Project and Install Requirements
+### Step 2: Download this Project
 1. Download this repository to your computer (click the green **Code** button -> **Download ZIP** on GitHub and extract it).
-2. Open your system's command prompt (on Windows, search for `cmd` in the start menu).
-3. Navigate to the folder where you extracted the project (for example, type `cd "C:\Path\To\Folder"`).
-4. Install the required libraries by running this line and pressing Enter:
-   ```bash
-   pip install -r requirements.txt
-   ```
 
-### Step 3: Configure your Game Path (War Thunder)
-The program needs to know where your War Thunder is installed to read the 3D models:
-1. In the project folder, locate the file named `config.json.example`.
-2. Duplicate it (make a copy) and rename the copy to `config.json`.
-3. Open `config.json` with Notepad or any text editor. You will see something like this:
-   ```json
-   {
-       "wt_root": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\War Thunder",
-       "output_root": ".\\Bf109_Raw_Asset"
-   }
-   ```
-4. If your game is installed in a different directory (for example, on another drive), change the path under `"wt_root"`.
-   * **Important Note:** Use **double backslashes `\\`** to separate folders (e.g. `D:\\Games\\War Thunder`).
-5. Save the file and close it.
+### Step 3: Run the Manager!
+* On Windows, simply double-click the `start.bat` file in the project folder.
+* **What it does automatically:**
+  * Verifies and installs any missing Python packages silently.
+  * Creates your local `config.json` file.
+  * Automatically attempts to find your War Thunder installation. If it cannot find it, it will pop up a window asking you to select the game folder.
+  * Launches the local web server and automatically opens the application in your web browser.
 
-### Step 4: Run the Manager!
-* On Windows, simply double-click the `start.bat` file. This will automatically verify python packages and launch the server.
-* *Or, open a command prompt in the project folder and type:*
-  ```bash
-  python web_server.py
-  ```
-
-A web page will automatically open in your browser. If it doesn't, open your browser and go to:
-👉 **[http://localhost:8000](http://localhost:8000)**
+* *Or, if you prefer the manual command line:*
+  1. Open a command prompt in the project folder and run:
+     ```bash
+     pip install -r requirements.txt
+     python web_server.py
+     ```
+  2. If the browser does not open automatically, go to:
+     👉 **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
@@ -132,39 +118,25 @@ No te preocupes, no necesitas saber programar para usar esta herramienta. Sigue 
 1. Descarga e instala **Python 3.10 o superior** desde la web oficial: [python.org](https://www.python.org/downloads/).
 2. **⚠️ MUY IMPORTANTE:** Durante la instalación, asegúrate de marcar la casilla que dice **"Add Python to PATH"** (Agregar Python al PATH) antes de hacer clic en *Install Now*. Si no marcas esto, el programa no podrá ejecutarse.
 
-### Paso 2: Descargar este Proyecto e Instalar Requisitos
+### Paso 2: Descargar este Proyecto
 1. Descarga este repositorio en tu computadora (haciendo clic en el botón verde **Code** -> **Download ZIP** en GitHub y descomprímelo).
-2. Abre la consola de comandos de tu sistema (en Windows, busca `cmd` en el menú de inicio).
-3. Ve a la carpeta donde descomprimiste el proyecto (por ejemplo, escribe `cd "C:\Ruta\De\La\Clarjeta"`).
-4. Instala las librerías necesarias ejecutando la siguiente línea y presionando Enter:
-   ```bash
-   pip install -r requirements.txt
-   ```
 
-### Paso 3: Configurar la Ruta de tu Juego (War Thunder)
-El programa necesita saber dónde está instalado tu War Thunder para leer los modelos 3D:
-1. En la carpeta del proyecto, busca el archivo llamado `config.json.example`.
-2. Duplícalo (haz una copia) y cámbiale el nombre a `config.json`.
-3. Abre ese nuevo archivo `config.json` con el Bloc de notas. Verás algo como esto:
-   ```json
-   {
-       "wt_root": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\War Thunder",
-       "output_root": ".\\Bf109_Raw_Asset"
-   }
-   ```
-4. Si tu juego está instalado en una ruta diferente (por ejemplo, en otro disco), cambia la ruta de `"wt_root"`. 
-   * **Nota importante:** Usa **doble barra diagonal invertida `\\`** para separar las carpetas (ej. `D:\\Juegos\\War Thunder`).
-5. Guarda el archivo y ciérralo.
+### Paso 3: ¡A arrancar el programa!
+* En Windows, simplemente haz doble clic en el archivo `start.bat` en la carpeta del proyecto.
+* **Lo que hace de forma automática:**
+  * Verifica e instala silenciosamente cualquier paquete de Python faltante.
+  * Crea tu archivo de configuración local `config.json`.
+  * Intenta detectar automáticamente la ruta de tu juego War Thunder. Si no la encuentra, abrirá una ventana para que selecciones la carpeta de instalación.
+  * Inicia el servidor web local y abre la aplicación en tu navegador de forma automática.
 
-### Paso 4: ¡A arrancar el programa!
-* En Windows, simplemente haz doble clic en el archivo `start.bat`. Esto verificará los paquetes de Python e iniciará el servidor de forma automática.
-* *O si lo prefieres, abre una consola de comandos en la carpeta y escribe:*
-  ```bash
-  python web_server.py
-  ```
-
-Se abrirá automáticamente una ventana en tu navegador web. Si no lo hace, abre tu navegador e ingresa a esta dirección:
-👉 **[http://localhost:8000](http://localhost:8000)**
+* *O si lo prefieres por consola de comandos:*
+  1. Abre una consola de comandos en la carpeta del proyecto y ejecuta:
+     ```bash
+     pip install -r requirements.txt
+     python web_server.py
+     ```
+  2. Si el navegador no se abre automáticamente, ingresa a:
+     👉 **[http://localhost:8000](http://localhost:8000)**
 
 ---
 

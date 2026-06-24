@@ -33,7 +33,21 @@ def loadDLL(name:str):
 	if not path.exists(dllPath):
 		return None
 	else:
-		return cdll.LoadLibrary(dllPath)
+		import os
+		cookie = None
+		if hasattr(os, "add_dll_directory"):
+			try:
+				cookie = os.add_dll_directory(LIB_FOLDER)
+			except Exception:
+				pass
+		try:
+			return cdll.LoadLibrary(dllPath)
+		finally:
+			if cookie:
+				try:
+					cookie.close()
+				except Exception:
+					pass
 
 def getUIPath(fileName:str):
 	return path.join(UI_FOLDER, fileName)

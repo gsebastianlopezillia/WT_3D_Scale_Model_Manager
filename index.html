@@ -873,8 +873,43 @@
             }
         }
 
+        // Return fallback SVG for category
+        function getFallbackSvg(category) {
+            if (category === 'aircraft') {
+                return `<svg viewBox="0 0 24 24" fill="currentColor" class="svg-fallback-icon"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l7 2.5z" /></svg>`;
+            } else if (category === 'tank') {
+                return `<svg viewBox="0 0 24 24" fill="currentColor" class="svg-fallback-icon"><path d="M22 11h-5.2c-.3-1.2-1.3-2-2.5-2H11c-1.2 0-2.2.8-2.5 2H2v2h1.2c.2.6.7 1 1.3 1h13c.6 0 1.1-.4 1.3-1H22v-2zm-7.7 2h-4.6c.2-.6.7-1 1.3-1h2c.6 0 1.1.4 1.3 1zM2 16c-.6 0-1 .4-1 1v2c0 .6.4 1 1 1h20c.6 0 1-.4 1-1v-2c0-.6-.4-1-1-1H2zm3 3c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm4 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z" /></svg>`;
+            } else if (category === 'ship') {
+                return `<svg viewBox="0 0 24 24" fill="currentColor" class="svg-fallback-icon"><path d="M20.2 16.5c-.3-.8-1.2-1.3-2.1-1.3H17l-1-2.5c-.2-.5-.7-.8-1.2-.8H9.2c-.5 0-1 .3-1.2.8l-1 2.5H5.9c-.9 0-1.8.5-2.1 1.3L2.2 20c-.3.8.3 1.7 1.2 1.7h17.2c.9 0 1.5-.9 1.2-1.7l-1.6-3.5zM12 4.5L9 8h6l-3-3.5z" /></svg>`;
+            }
+            return `<svg viewBox="0 0 24 24" fill="currentColor" class="svg-fallback-icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>`;
+        }
+
+        // Thumbnail IntersectionObserver (lazy-load only visible thumbnails)
+        let thumbObserver = null;
+        function setupThumbnailObserver() {
+            if (thumbObserver) thumbObserver.disconnect();
+            const root = document.getElementById('vehicle-list');
+            thumbObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target.querySelector('img.thumbnail-img');
+                        if (img && img.dataset.src) {
+                            img.src = img.dataset.src;
+                            delete img.dataset.src;
+                        }
+                        thumbObserver.unobserve(entry.target);
+                    }
+                });
+            }, { root: root, rootMargin: '100px' });
+
+            root.querySelectorAll('.vehicle-thumbnail[data-lazy]').forEach(el => {
+                thumbObserver.observe(el);
+            });
+        }
+
         // Render Vehicle List DOM
-        function renderVehicleList(vehicles) {
+        function renderVehicleList(vehicles, showThumbnails) {
             const container = document.getElementById('vehicle-list');
             if (vehicles.length === 0) {
                 container.innerHTML = `
@@ -917,30 +952,49 @@
                 html += `<div class="category-title">${title}</div>`;
                 categorized[cat].forEach(v => {
                     const isSelected = currentVehicle && currentVehicle.name === v.name ? 'active' : '';
+                    let thumbnailHtml = '';
+                    if (showThumbnails) {
+                        thumbnailHtml = `
+                            <div class="vehicle-thumbnail fallback-${cat}" data-lazy>
+                                <img class="thumbnail-img" data-src="/api/thumbnail?name=${v.name}" onload="this.nextElementSibling.style.display='none';" onerror="this.style.display='none';" alt="" />
+                                ${getFallbackSvg(cat)}
+                            </div>
+                        `;
+                    }
                     html += `
                         <div class="vehicle-item ${isSelected}" data-name="${v.name}" onclick="selectVehicle('${v.name}', '${v.grp_path.replace(/\\/g, '\\\\')}')">
-                            <span class="vehicle-name">${v.friendly_name || v.name}</span>
-                            <span class="vehicle-badge ${badgeClass}">${badgeText}</span>
-                            <span class="vehicle-grp">${v.grp_path.split('\\').pop()}</span>
+                            <div class="vehicle-info">
+                                <span class="vehicle-name">${v.friendly_name || v.name}</span>
+                                <span class="vehicle-badge ${badgeClass}">${badgeText}</span>
+                                <span class="vehicle-grp">${v.grp_path.split('\\').pop()}</span>
+                            </div>
+                            ${thumbnailHtml}
                         </div>
                     `;
                 });
             }
             container.innerHTML = html;
+
+            // Activate lazy loading if thumbnails are present
+            if (showThumbnails) {
+                setupThumbnailObserver();
+            }
         }
 
         // Filter vehicles by category and search query
         let selectedCategory = 'all';
 
         function filterVehicles() {
-            const query = document.getElementById('vehicle-search').value.toLowerCase();
+            const query = document.getElementById('vehicle-search').value.toLowerCase().trim();
             const filtered = vehiclesList.filter(v => {
                 const matchesSearch = v.name.toLowerCase().includes(query) || 
                                       (v.friendly_name && v.friendly_name.toLowerCase().includes(query));
                 const matchesCategory = (selectedCategory === 'all' || v.category === selectedCategory);
                 return matchesSearch && matchesCategory;
             });
-            renderVehicleList(filtered);
+            // Show thumbnails only when searching and results are manageable
+            const showThumbnails = query.length >= 2 && filtered.length <= 80;
+            renderVehicleList(filtered, showThumbnails);
         }
 
         // Search vehicle logic
@@ -1969,6 +2023,11 @@
             setLanguage(savedLang, false);
             fetchVehicles();
             init3DViewport();
+            
+            // Start Keep-Alive Heartbeat for auto-shutdown when browser closes
+            setInterval(() => {
+                fetch('/api/ping').catch(() => {});
+            }, 2500);
         });
     </script>
     
