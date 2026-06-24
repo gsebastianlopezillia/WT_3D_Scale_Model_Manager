@@ -1,6 +1,7 @@
 # Caches and output assets
 Bf109_Raw_Asset/
 temp_export/
+WT_3D_Exports/
 vehicles_index.json
 
 # Local configurations (contains private paths)
@@ -11,6 +12,13 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# PyInstaller and Build outputs
+build/
+dist/
+*.spec
+test_*.py
+test_*.exe
 
 # External tools and cloned repositories
 tools/
