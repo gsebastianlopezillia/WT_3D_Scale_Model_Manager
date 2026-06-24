@@ -232,9 +232,12 @@
 
                 <!-- Loaded Parts Sidebar -->
                 <div class="parts-panel" id="parts-panel" style="display: none;">
-                    <div class="parts-header">
-                        <span id="parts-header-title" data-i18n="parts_estimated">Despiece Estimado</span>
-                        <span style="font-size: 11px; color: var(--accent-secondary);" id="parts-count">0</span>
+                    <div class="parts-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: var(--panel-header);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="parts-header-title" data-i18n="parts_estimated">Despiece Estimado</span>
+                            <span style="font-size: 11px; color: var(--accent-secondary);" id="parts-count">0</span>
+                        </div>
+                        <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 10px; min-height: 20px; line-height: 1.2; margin: 0; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);" onclick="restoreAllParts()" data-i18n="parts_restore_all">Restaurar Todas</button>
                     </div>
                     <div class="parts-list" id="parts-list-container">
                         <!-- Dynamic list of parts -->
@@ -315,6 +318,7 @@
                 parts_generated: "Piezas Generadas",
                 part_preview: "VISTA PREVIA",
                 part_download: "DESCARGAR",
+                parts_restore_all: "Restaurar Todas",
                 parts_count_suffix_pieces: "piezas",
                 parts_count_suffix_files: "archivos",
                 variant_intact: "Intacta",
@@ -462,6 +466,7 @@
                 parts_generated: "Generated Parts",
                 part_preview: "PREVIEW",
                 part_download: "DOWNLOAD",
+                parts_restore_all: "Restore All",
                 parts_count_suffix_pieces: "pieces",
                 parts_count_suffix_files: "files",
                 variant_intact: "Intact",
@@ -1014,6 +1019,7 @@
 
         // Select Vehicle and Load Metadata
         async function selectVehicle(name, grpPath) {
+            const isSameVehicle = currentVehicle && currentVehicle.name === name;
             currentVehicle = { name, grp_path: grpPath };
             
             // Highlight the active item in DOM (preserves search/filter state and scroll position)
@@ -1036,9 +1042,11 @@
             document.getElementById('info-name').innerText = displayName;
             document.getElementById('info-grp').innerText = grpPath.split('\\').pop();
             
-            document.getElementById('orig-len').innerText = LANGUAGES[currentLang]['loading_details'];
-            document.getElementById('orig-hgt').innerText = LANGUAGES[currentLang]['loading_details'];
-            document.getElementById('orig-span').innerText = LANGUAGES[currentLang]['loading_details'];
+            if (!isSameVehicle) {
+                document.getElementById('orig-len').innerText = LANGUAGES[currentLang]['loading_details'];
+                document.getElementById('orig-hgt').innerText = LANGUAGES[currentLang]['loading_details'];
+                document.getElementById('orig-span').innerText = LANGUAGES[currentLang]['loading_details'];
+            }
             document.getElementById('btn-generate').disabled = true;
             
             try {
@@ -1056,22 +1064,24 @@
                 isCurrentVehicleTank = (category === 'tank');
                 updateLevelHelperText();
                 
-                // Update scale options and labels adaptively
-                updateScaleModeOptions(category);
-                
                 // Show bounds
                 document.getElementById('orig-len').innerText = `${data.length.toFixed(2)} m`;
                 document.getElementById('orig-hgt').innerText = `${data.height.toFixed(2)} m`;
                 document.getElementById('orig-span').innerText = `${data.wingspan.toFixed(2)} m`;
                 
-                // Automatically adapt scaling slider values
-                const scaleMode = document.getElementById('scale-mode').value;
-                const customSizeInput = document.getElementById('custom-size');
-                
-                if (scaleMode === 'wingspan') {
-                    customSizeInput.value = Math.min(2000, Math.round(data.wingspan * 100)); // Default approx 1:10 scale
-                } else if (scaleMode === 'length') {
-                    customSizeInput.value = Math.min(2000, Math.round(data.length * 100));
+                // Only reset scaling inputs if it's a NEW vehicle
+                if (!isSameVehicle) {
+                    // Update scale options and labels adaptively
+                    updateScaleModeOptions(category);
+                    
+                    const scaleMode = document.getElementById('scale-mode').value;
+                    const customSizeInput = document.getElementById('custom-size');
+                    
+                    if (scaleMode === 'wingspan') {
+                        customSizeInput.value = Math.min(2000, Math.round(data.wingspan * 100)); // Default approx 1:10 scale
+                    } else if (scaleMode === 'length') {
+                        customSizeInput.value = Math.min(2000, Math.round(data.length * 100));
+                    }
                 }
                 
                 updateScaledDimensions();
@@ -1080,7 +1090,14 @@
                 // Load interactive preview immediately!
                 document.getElementById('no-model-overlay').style.display = 'none';
                 document.getElementById('exploded-controls-panel').style.display = 'block';
-                loadPreviewModel();
+                
+                // Only reload the 3D model if it's a new vehicle, to save network and processing
+                if (!isSameVehicle) {
+                    loadPreviewModel();
+                } else {
+                    // If same vehicle, just restore parts visibility instead of re-downloading
+                    restoreAllParts();
+                }
             } catch (err) {
                 console.error("Error loading vehicle details:", err);
             }
@@ -1484,6 +1501,12 @@
             updateMeshVisibility();
             
             // Re-render the list to update item opacity/checks
+            applySegmentation();
+        }
+
+        function restoreAllParts() {
+            activeExcludedParts = [];
+            updateMeshVisibility();
             applySegmentation();
         }
 

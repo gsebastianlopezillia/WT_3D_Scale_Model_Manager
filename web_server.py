@@ -789,6 +789,21 @@ def run_segmentation_pipeline(raw_obj_path, target_dir, groups_map, scale_factor
     return generated_files
 
 class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
+    def handle(self):
+        """Override handle to catch broken pipe errors when browser disconnects (e.g. refresh)."""
+        try:
+            super().handle()
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
+            # Client disconnected mid-response (browser refresh, tab close, etc.)
+            # This is normal and should not crash the server thread.
+            pass
+
+    def log_message(self, format, *args):
+        """Suppress noisy default HTTP logging for thumbnails."""
+        msg = format % args
+        if '/api/thumbnail' not in msg and '/api/ping' not in msg:
+            super().log_message(format, *args)
+
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -1085,10 +1100,16 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                 temp_dir = None
                 
                 if not metadata or not cached_obj_path:
-                    # Cache miss
-                    raw_obj, temp_dir = get_temp_raw_model(model, grp)
-                    metadata = parse_obj_metadata(raw_obj)
-                    save_model_to_cache(model, raw_obj, metadata)
+                    # Cache miss - use lock
+                    with _model_extract_lock:
+                        # Re-check cache after acquiring lock
+                        metadata, cached_obj_path = get_cached_model_details(model)
+                        if not metadata or not cached_obj_path:
+                            raw_obj, temp_dir = get_temp_raw_model(model, grp)
+                            metadata = parse_obj_metadata(raw_obj)
+                            save_model_to_cache(model, raw_obj, metadata)
+                        else:
+                            raw_obj = cached_obj_path
                 
                 # 2. Calculate scale factor
                 # Original game coords are in meters, target is in mm
@@ -1128,7 +1149,10 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                 
                 # Cleanup
                 if temp_dir and os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir)
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except OSError:
+                        pass
                 
                 response = {
                     "success": True,
