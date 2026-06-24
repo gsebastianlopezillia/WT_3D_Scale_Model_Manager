@@ -19,11 +19,7 @@ Don't worry, you don't need any coding skills or Python installed to run this to
   * Creates your local `config.json` file.
   * Automatically attempts to find your War Thunder installation. If it cannot find it, it will pop up a window asking you to select the game folder.
   * Launches the local web server and automatically opens the application in your web browser.
-     ```bash
-     pip install -r requirements.txt
-     python web_server.py
-     ```
-  2. If the browser does not open automatically, go to:
+  * If the browser does not open automatically, go to:
      👉 **[http://localhost:8000](http://localhost:8000)**
 
 ---
@@ -115,6 +111,8 @@ No te preocupes, no necesitas saber programar ni tener Python instalado para usa
   * Crea tu archivo de configuración local `config.json`.
   * Intenta detectar automáticamente la ruta de tu juego War Thunder. Si no la encuentra, abrirá una ventana para que selecciones la carpeta de instalación.
   * Inicia el servidor web local y abre la aplicación en tu navegador de forma automática.
+  * Si el navegador no se abre automáticamente, entra a:
+     👉 **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
