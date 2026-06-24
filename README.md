@@ -8,25 +8,17 @@ Welcome to the **WT 3D Scale Model Manager**! If you are a **3D printing** (FDM 
 
 ## 🛠️ Installation Guide for Non-Programmers
 
-Don't worry, you don't need any coding skills to run this tool. Just follow these simple steps:
+Don't worry, you don't need any coding skills or Python installed to run this tool. Just follow these simple steps:
 
-### Step 1: Install Python (The engine of the program)
-1. Download and install **Python 3.10 or higher** from the official website: [python.org](https://www.python.org/downloads/).
-2. **⚠️ VERY IMPORTANT:** During installation, make sure to check the box that says **"Add Python to PATH"** before clicking *Install Now*. If you miss this, the program will not be executable from the command line.
+### Step 1: Download the App
+1. Download the latest `WT_3D_Manager.exe` release (or extract the `.zip`).
 
-### Step 2: Download this Project
-1. Download this repository to your computer (click the green **Code** button -> **Download ZIP** on GitHub and extract it).
-
-### Step 3: Run the Manager!
-* On Windows, simply double-click the `start.bat` file in the project folder.
+### Step 2: Run the Manager!
+* On Windows, simply double-click `WT_3D_Manager.exe`.
 * **What it does automatically:**
-  * Verifies and installs any missing Python packages silently.
   * Creates your local `config.json` file.
   * Automatically attempts to find your War Thunder installation. If it cannot find it, it will pop up a window asking you to select the game folder.
   * Launches the local web server and automatically opens the application in your web browser.
-
-* *Or, if you prefer the manual command line:*
-  1. Open a command prompt in the project folder and run:
      ```bash
      pip install -r requirements.txt
      python web_server.py
@@ -112,31 +104,17 @@ Created and maintained by **Pelad0o**.
 
 ## 🛠️ Guía de Instalación para NO Programadores
 
-No te preocupes, no necesitas saber programar para usar esta herramienta. Sigue estos sencillos pasos:
+No te preocupes, no necesitas saber programar ni tener Python instalado para usar esta herramienta. Sigue estos sencillos pasos:
 
-### Paso 1: Instalar Python (El motor del programa)
-1. Descarga e instala **Python 3.10 o superior** desde la web oficial: [python.org](https://www.python.org/downloads/).
-2. **⚠️ MUY IMPORTANTE:** Durante la instalación, asegúrate de marcar la casilla que dice **"Add Python to PATH"** (Agregar Python al PATH) antes de hacer clic en *Install Now*. Si no marcas esto, el programa no podrá ejecutarse.
+### Paso 1: Descargar la Aplicación
+1. Descarga el archivo `WT_3D_Manager.exe` de la última versión (o descomprime el `.zip` descargado).
 
-### Paso 2: Descargar este Proyecto
-1. Descarga este repositorio en tu computadora (haciendo clic en el botón verde **Code** -> **Download ZIP** en GitHub y descomprímelo).
-
-### Paso 3: ¡A arrancar el programa!
-* En Windows, simplemente haz doble clic en el archivo `start.bat` en la carpeta del proyecto.
+### Paso 2: ¡A arrancar el programa!
+* En Windows, simplemente haz doble clic en el archivo `WT_3D_Manager.exe`.
 * **Lo que hace de forma automática:**
-  * Verifica e instala silenciosamente cualquier paquete de Python faltante.
   * Crea tu archivo de configuración local `config.json`.
   * Intenta detectar automáticamente la ruta de tu juego War Thunder. Si no la encuentra, abrirá una ventana para que selecciones la carpeta de instalación.
   * Inicia el servidor web local y abre la aplicación en tu navegador de forma automática.
-
-* *O si lo prefieres por consola de comandos:*
-  1. Abre una consola de comandos en la carpeta del proyecto y ejecuta:
-     ```bash
-     pip install -r requirements.txt
-     python web_server.py
-     ```
-  2. Si el navegador no se abre automáticamente, ingresa a:
-     👉 **[http://localhost:8000](http://localhost:8000)**
 
 ---
 

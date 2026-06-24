@@ -16,7 +16,7 @@ def getParentDir(filePath:str, level:int = 1):
 		return getParentDir(path.dirname(filePath), level - 1)
 
 if getattr(sys, "frozen", False):
-	ROOT_FOLDER = path.dirname(sys.executable)
+	ROOT_FOLDER = getattr(sys, "_MEIPASS", path.dirname(sys.executable))
 else:
 	ROOT_FOLDER = getParentDir(path.abspath(__file__), 4)
 
@@ -29,8 +29,22 @@ def getResPath(fileName:str):
 
 def loadDLL(name:str):
 	dllPath = path.join(LIB_FOLDER, name)
-
+	
 	if not path.exists(dllPath):
+		try:
+			with open("WT_3D_Exports/dll_debug.log", "w") as f:
+				f.write(f"DLL NOT FOUND!\nName: {name}\ndllPath: {dllPath}\nROOT_FOLDER: {ROOT_FOLDER}\nLIB_FOLDER: {LIB_FOLDER}\n")
+				f.write(f"frozen: {getattr(sys, 'frozen', False)}\n")
+				if getattr(sys, "frozen", False):
+					f.write(f"_MEIPASS: {getattr(sys, '_MEIPASS', 'MISSING')}\n")
+					try:
+						import os
+						f.write("Root files:\n" + str(os.listdir(getattr(sys, '_MEIPASS', '.'))) + "\n")
+						f.write("Lib files:\n" + str(os.listdir(path.join(getattr(sys, '_MEIPASS', '.'), 'lib'))) + "\n")
+					except Exception as e:
+						f.write(f"Error listing dirs: {e}\n")
+		except Exception:
+			pass
 		return None
 	else:
 		import os
@@ -42,6 +56,12 @@ def loadDLL(name:str):
 				pass
 		try:
 			return cdll.LoadLibrary(dllPath)
+		except Exception as e:
+			try:
+				with open("WT_3D_Exports/dll_debug.log", "w") as f:
+					f.write(f"DLL LOAD FAILED!\nName: {name}\ndllPath: {dllPath}\nException: {e}\n")
+			except Exception:
+				pass
 		finally:
 			if cookie:
 				try:

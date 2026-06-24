@@ -10,9 +10,18 @@ import ssl
 import threading
 import tempfile
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # Add local vendored libraries to python path
-sys.path.append(os.path.abspath(r'.\lib\dae'))
-sys.path.append(os.path.abspath(r'.\lib'))
+sys.path.append(resource_path(r'.\lib\dae'))
+sys.path.append(resource_path(r'.\lib'))
 
 try:
     from parse.gameres import GameResourcePack, GameResDesc
@@ -30,11 +39,17 @@ except ModuleNotFoundError as e:
 import csv
 
 PORT = 8000
-INDEX_FILE = 'vehicles_index.json'
+
+# Create a clean data directory for user files
+USER_DATA_DIR = os.path.abspath(r'.\WT_3D_Exports')
+os.makedirs(USER_DATA_DIR, exist_ok=True)
+
+INDEX_FILE = os.path.join(USER_DATA_DIR, 'vehicles_index.json')
+CONFIG_FILE = os.path.join(USER_DATA_DIR, 'config.json')
 
 # Load path settings from config.json if it exists, otherwise resolve it
 WT_ROOT = None
-OUTPUT_ROOT = os.path.abspath(r'.\Bf109_Raw_Asset')
+OUTPUT_ROOT = USER_DATA_DIR
 
 def get_registry_value(key, subkey, value):
     try:
@@ -132,9 +147,9 @@ def prompt_wt_path():
 
 # Load existing config or initialize
 config_loaded = False
-if os.path.exists('config.json'):
+if os.path.exists(CONFIG_FILE):
     try:
-        with open('config.json', 'r', encoding='utf-8') as f:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             user_config = json.load(f)
             wt_root_cand = user_config.get("wt_root") or user_config.get("WT_ROOT")
             if wt_root_cand and os.path.exists(os.path.join(wt_root_cand, "content")):
@@ -160,10 +175,10 @@ if not config_loaded:
             
     # Save new config
     try:
-        with open('config.json', 'w', encoding='utf-8') as f:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump({
                 "wt_root": WT_ROOT,
-                "output_root": r".\Bf109_Raw_Asset"
+                "output_root": USER_DATA_DIR
             }, f, indent=4)
         print("Configuración inicial guardada en config.json")
     except Exception as e:
@@ -873,18 +888,26 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
             if not name.endswith('.png'):
                 name += '.png'
                 
-            thumb_dir = os.path.join(OUTPUT_ROOT, 'thumbnails')
-            os.makedirs(thumb_dir, exist_ok=True)
-            local_path = os.path.join(thumb_dir, name)
+            thumb_dir_external = os.path.join(OUTPUT_ROOT, 'thumbnails')
+            os.makedirs(thumb_dir_external, exist_ok=True)
+            local_path = os.path.join(thumb_dir_external, name)
+            bundled_path = resource_path(os.path.join('thumbnails', name))
             
-            if os.path.exists(local_path):
+            # Check bundled first (from PyInstaller .exe), then external
+            file_to_read = None
+            if os.path.exists(bundled_path):
+                file_to_read = bundled_path
+            elif os.path.exists(local_path):
+                file_to_read = local_path
+                
+            if file_to_read:
                 try:
-                    file_size = os.path.getsize(local_path)
+                    file_size = os.path.getsize(file_to_read)
                     if file_size == 0:
                         # Negative cache: thumbnail doesn't exist in datamine, serve empty instantly
                         self.send_response_compressed(b'', 'image/png', 'public, max-age=86400')
                         return
-                    with open(local_path, 'rb') as f:
+                    with open(file_to_read, 'rb') as f:
                         content_bytes = f.read()
                     self.send_response_compressed(content_bytes, 'image/png', 'public, max-age=86400')
                     return
@@ -1028,11 +1051,11 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
         else:
             # Serve index.html or styles
             if path == '/' or path == '/index.html':
-                with open('index.html', 'rb') as f:
+                with open(resource_path('index.html'), 'rb') as f:
                     content_bytes = f.read()
                 self.send_response_compressed(content_bytes, 'text/html', 'no-cache')
             elif path == '/style.css':
-                with open('style.css', 'rb') as f:
+                with open(resource_path('style.css'), 'rb') as f:
                     content_bytes = f.read()
                 self.send_response_compressed(content_bytes, 'text/css', 'no-cache')
             else:
@@ -1208,6 +1231,14 @@ def main():
         daemon_threads = True
     with ThreadedHTTPServer(("", PORT), handler) as httpd:
         print(f"Web Manager Server running at http://localhost:{PORT}")
+        
+        import webbrowser
+        def open_browser():
+            import time
+            time.sleep(1)
+            webbrowser.open(f'http://localhost:{PORT}')
+        threading.Thread(target=open_browser, daemon=True).start()
+        
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
