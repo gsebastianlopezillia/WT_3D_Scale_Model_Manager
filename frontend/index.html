@@ -658,31 +658,8 @@
         function classifyGroupsJS(rawGroups, level, category) {
             const groupsMap = {};
             if (level === 1) {
-                // Level 1: Fused/monolithic vehicle body,
-                // but keeps optional/customizable parts separate: propeller, canopy, weapons, launchers, payload.
-                const propeller = [];
-                const canopy = [];
-                const weapons = [];
-                const launchers = [];
-                const payload = [];
-                const body = [];
-                
-                rawGroups.forEach(g => {
-                    const gl = g.toLowerCase();
-                    if (gl.includes('prop') || gl.includes('spinner')) propeller.push(g);
-                    else if (gl.includes('blister') || gl.includes('canopy') || gl.includes('glass')) canopy.push(g);
-                    else if (['pylon', 'launcher', 'rack', 'pod', 'tube'].some(k => gl.includes(k)) && !gl.includes('track')) launchers.push(g);
-                    else if (['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak'].some(k => gl.includes(k))) weapons.push(g);
-                    else if (['bomb', 'rocket', 'missile', 'torpedo', '210mm'].some(k => gl.includes(k))) payload.push(g);
-                    else body.push(g);
-                });
-                
-                if (body.length) groupsMap['body'] = body;
-                if (propeller.length) groupsMap['propeller'] = propeller;
-                if (canopy.length) groupsMap['canopy'] = canopy;
-                if (weapons.length) groupsMap['weapons'] = weapons;
-                if (launchers.length) groupsMap['launchers'] = launchers;
-                if (payload.length) groupsMap['payload'] = payload;
+                // Level 1: Modelo homogéneo (100% en un solo grupo)
+                groupsMap['body'] = [...rawGroups];
                 
             } else if (level === 2) {
                 if (category === 'tank') {
@@ -840,7 +817,8 @@
             } else {
                 rawGroups.forEach(g => {
                     const cleanName = g.replace(/ /g, '_').replace(/:/g, '_');
-                    groupsMap[cleanName] = [g];
+                    if (!groupsMap[cleanName]) groupsMap[cleanName] = [];
+                    groupsMap[cleanName].push(g);
                 });
             }
             return groupsMap;
@@ -1046,6 +1024,11 @@
                 document.getElementById('orig-len').innerText = LANGUAGES[currentLang]['loading_details'];
                 document.getElementById('orig-hgt').innerText = LANGUAGES[currentLang]['loading_details'];
                 document.getElementById('orig-span').innerText = LANGUAGES[currentLang]['loading_details'];
+                
+                // Show loading overlay immediately to prevent anxious clicking
+                document.getElementById('no-model-overlay').style.display = 'none';
+                document.getElementById('model-loading-overlay').style.display = 'flex';
+                document.getElementById('model-loading-text').innerText = LANGUAGES[currentLang]['loading_model'];
             }
             document.getElementById('btn-generate').disabled = true;
             
@@ -1055,6 +1038,7 @@
                 
                 if (data.error) {
                     alert(LANGUAGES[currentLang]['error_details_failed'] + data.error);
+                    document.getElementById('model-loading-overlay').style.display = 'none';
                     return;
                 }
                 
@@ -1100,6 +1084,7 @@
                 }
             } catch (err) {
                 console.error("Error loading vehicle details:", err);
+                document.getElementById('model-loading-overlay').style.display = 'none';
             }
         }
         function updateScaleModeOptions(category) {

@@ -338,9 +338,35 @@ def get_friendly_name(vname, translations):
             if val:
                 return val
                 
-    # Fallback to cleaning the technical name
-    clean_parts = [p.capitalize() for p in vname.split('_')]
-    return " ".join(clean_parts)
+    # Fallback to cleaning the technical name using Regex
+    import re
+    # 1. Remove technical suffixes
+    name = re.sub(r'_(shop|early|late|premium|tutorial|mod|rocket|space|naval|football)$', '', vname, flags=re.IGNORECASE)
+    
+    # 2. Add dashes to Letter_Number combos (f_4e -> f-4e, p_51 -> p-51)
+    name = re.sub(r'(^|_)([a-zA-Z]{1,4})_(\d+[a-zA-Z]*)(?=_|$)', r'\1\2-\3', name)
+    name = re.sub(r'(^|_)([a-zA-Z]{1,4}-\d+[a-zA-Z]*)_(\d+[a-zA-Z]*)(?=_|$)', r'\1\2-\3', name)
+    
+    # 3. Format common prefixes (pz_iv -> pz.iv)
+    name = re.sub(r'(^|_)pz_([ivx]+)(?=_|$)', r'\1pz.\2', name)
+    name = re.sub(r'(^|_)bf_109(?=_|$)', r'\1bf-109', name)
+    
+    # 4. Title case while keeping lower case for small words
+    clean_parts = []
+    for p in name.split('_'):
+        p_lower = p.lower()
+        if p_lower in ['of', 'the', 'de', 'del', 'ausf', 'mk', 'mod']:
+            if p_lower == 'ausf': clean_parts.append('Ausf.')
+            elif p_lower == 'mk': clean_parts.append('Mk.')
+            elif p_lower == 'mod': clean_parts.append('Mod.')
+            else: clean_parts.append(p_lower)
+        else:
+            clean_parts.append(p.title())
+            
+    res = " ".join(clean_parts)
+    # Roman numeral fix
+    res = re.sub(r'\b(Ii|Iii|Iv|Vi|Vii|Viii|Ix|Xi)\b', lambda m: m.group(1).upper(), res)
+    return res
 
 def scan_vehicles_thread():
     global vehicle_index, indexing_status
@@ -473,15 +499,17 @@ def parse_obj_metadata(raw_obj_path):
     if not os.path.exists(raw_obj_path):
         return None
         
+    seen_groups = set()
     with open(raw_obj_path, 'r') as f:
         for line in f:
             if line.startswith('v '):
-                parts = line.strip().split()
+                parts = line.split()
                 vertices.append((float(parts[1]), float(parts[2]), float(parts[3])))
             elif line.startswith('g '):
-                current_group = line.strip()[2:]
-                if current_group not in groups:
+                current_group = line[2:].strip()
+                if current_group not in seen_groups:
                     groups.append(current_group)
+                    seen_groups.add(current_group)
                     
     # Exclude flare, fire, and blur groups
     exclude_keywords = ['flare', 'fire', 'prop_side', 'prop_wind', 'Object001']
@@ -504,36 +532,8 @@ def parse_obj_metadata(raw_obj_path):
 def classify_groups(raw_groups, level, category):
     groups_map = {}
     if level == 1:
-        # Level 1: Fused/monolithic vehicle body,
-        # but keeps optional/customizable parts separate: propeller, canopy, weapons, launchers, payload.
-        propeller_groups = []
-        canopy_groups = []
-        weapons_groups = []
-        launchers_groups = []
-        payload_groups = []
-        body_groups = []
-        
-        for g in raw_groups:
-            gl = g.lower()
-            if any(p in gl for p in ['prop', 'spinner']):
-                propeller_groups.append(g)
-            elif any(c in gl for c in ['blister', 'canopy', 'glass']):
-                canopy_groups.append(g)
-            elif any(arm in gl for arm in ['pylon', 'launcher', 'rack', 'pod', 'tube']) and 'track' not in gl:
-                launchers_groups.append(g)
-            elif any(arm in gl for arm in ['gun', 'mg', 'cannon', 'mgun', 'aa_gun', 'flak']):
-                weapons_groups.append(g)
-            elif any(arm in gl for arm in ['bomb', 'rocket', 'missile', 'torpedo', '210mm']):
-                payload_groups.append(g)
-            else:
-                body_groups.append(g)
-                
-        if body_groups: groups_map['body'] = body_groups
-        if propeller_groups: groups_map['propeller'] = propeller_groups
-        if canopy_groups: groups_map['canopy'] = canopy_groups
-        if weapons_groups: groups_map['weapons'] = weapons_groups
-        if launchers_groups: groups_map['launchers'] = launchers_groups
-        if payload_groups: groups_map['payload'] = payload_groups
+        # Level 1: Modelo homogéneo (100% en un solo grupo)
+        groups_map['body'] = list(raw_groups)
         
     elif level == 2:
         if category == 'tank':
@@ -699,7 +699,9 @@ def classify_groups(raw_groups, level, category):
         # Level 3: Funcional (Máxima Segmentación)
         for g in raw_groups:
             clean_name = g.replace(' ', '_').replace(':', '_')
-            groups_map[clean_name] = [g]
+            if clean_name not in groups_map:
+                groups_map[clean_name] = []
+            groups_map[clean_name].append(g)
             
     return groups_map
 
@@ -720,7 +722,7 @@ def run_segmentation_pipeline(raw_obj_path, target_dir, groups_map, scale_factor
     with open(raw_obj_path, 'r') as f:
         for line in f:
             if line.startswith('v '):
-                parts = line.strip().split()
+                parts = line.split()
                 vertices.append((float(parts[1]) * scale_factor, float(parts[2]) * scale_factor, float(parts[3]) * scale_factor))
             elif line.startswith('vt '):
                 parts = line.strip().split()
@@ -915,27 +917,52 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
                     print(f"Error reading cached thumbnail {name}: {e}")
                     
             url = f"https://raw.githubusercontent.com/gszabi99/War-Thunder-Datamine/master/atlases.vromfs.bin_u/units/{name}"
-            try:
+            
+            def fetch_thumb(fetch_url, fetch_local):
                 context = ssl._create_unverified_context()
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                req = urllib.request.Request(fetch_url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, context=context, timeout=5) as response:
-                    content_bytes = response.read()
-                    
-                with open(local_path, 'wb') as f:
-                    f.write(content_bytes)
-                    
+                    c_bytes = response.read()
+                with open(fetch_local, 'wb') as f:
+                    f.write(c_bytes)
+                return c_bytes
+
+            try:
+                content_bytes = fetch_thumb(url, local_path)
                 self.send_response_compressed(content_bytes, 'image/png', 'public, max-age=86400')
-            except Exception as e:
-                print(f"Error fetching thumbnail {name} from datamine: {e}")
-                # Cache negative result as an empty file to prevent repeated backend queries
+            except urllib.error.HTTPError as e:
+                # If 404, try regex fallback name to increase hit rate
+                if e.code == 404:
+                    import re
+                    clean_name = re.sub(r'_(shop|early|late|premium|tutorial)$', '', name.replace('.png', ''))
+                    if clean_name != name.replace('.png', ''):
+                        fallback_url = f"https://raw.githubusercontent.com/gszabi99/War-Thunder-Datamine/master/atlases.vromfs.bin_u/units/{clean_name}.png"
+                        try:
+                            content_bytes = fetch_thumb(fallback_url, local_path)
+                            self.send_response_compressed(content_bytes, 'image/png', 'public, max-age=86400')
+                            return
+                        except urllib.error.HTTPError as fallback_e:
+                            if fallback_e.code != 404:
+                                print(f"Error fetching fallback thumbnail {clean_name}: {fallback_e}")
+                    # Silent 404, don't spam console
+                else:
+                    print(f"Error fetching thumbnail {name} from datamine: {e}")
+                
+                # Cache negative result as an empty file
                 try:
                     with open(local_path, 'wb') as f:
                         pass
                 except Exception as cache_err:
                     print(f"Failed to cache empty thumbnail for {name}: {cache_err}")
                 
-                # Respond with 200 OK and empty body so client-side image decoding fails
-                # and triggers the fallback SVG cleanly without throwing red 404 console errors.
+                self.send_response_compressed(b'', 'image/png', 'public, max-age=86400')
+            except Exception as e:
+                print(f"Error fetching thumbnail {name} from datamine: {e}")
+                try:
+                    with open(local_path, 'wb') as f:
+                        pass
+                except Exception:
+                    pass
                 self.send_response_compressed(b'', 'image/png', 'public, max-age=86400')
             
         elif path == '/api/details':
@@ -1051,11 +1078,11 @@ class WebManagerHandler(http.server.SimpleHTTPRequestHandler):
         else:
             # Serve index.html or styles
             if path == '/' or path == '/index.html':
-                with open(resource_path('index.html'), 'rb') as f:
+                with open(resource_path('frontend/index.html'), 'rb') as f:
                     content_bytes = f.read()
                 self.send_response_compressed(content_bytes, 'text/html', 'no-cache')
             elif path == '/style.css':
-                with open(resource_path('style.css'), 'rb') as f:
+                with open(resource_path('frontend/style.css'), 'rb') as f:
                     content_bytes = f.read()
                 self.send_response_compressed(content_bytes, 'text/css', 'no-cache')
             else:
