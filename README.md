@@ -77,6 +77,7 @@ You do **not** need to install Python, Git, or run command-line terminal command
 - When you are done, simply **close the browser tab**.
 - The server will detect that the tab was closed and will automatically shut down the command prompt window within a few seconds!
 
+VIDEO: https://youtu.be/YMLJ9H8MjpA
 ---
 
 ## 📐 3D Printing & Scale Modeling Guide
@@ -222,6 +223,7 @@ Los modelos de juego vienen en un solo bloque complejo. Esta opción los divide 
 ### 4. Vista Explotada y Generar
 Usa el deslizador de **Vista Explotada** para ver cómo encajan las piezas. Puedes desmarcar las casillas en la lista para ocultar partes que no quieras imprimir (como bombas o cohetes). Al finalizar, haz clic en **Generar Piezas** para procesar el modelo y descargar los archivos `.obj`.
 
+VIDEO: https://youtu.be/YMLJ9H8MjpA
 ---
 
 ## ☕ Apoya el Proyecto (Cafecito)
