@@ -56,6 +56,8 @@ def main():
     shutil.copy("web_server.py", app_dir)
     if os.path.exists("README.md"):
         shutil.copy("README.md", app_dir)
+    if os.path.exists("LICENSE"):
+        shutil.copy("LICENSE", app_dir)
         
     shutil.copytree("lib", os.path.join(app_dir, "lib"))
     shutil.copytree("frontend", os.path.join(app_dir, "frontend"))
