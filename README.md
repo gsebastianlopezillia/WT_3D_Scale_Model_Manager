@@ -7,6 +7,8 @@
   [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
   [![VirusTotal](https://img.shields.io/badge/Security-VirusTotal_Verified-brightgreen.svg)](#-security-trust--zero-false-positives-virustotal)
+
+  [![Invitame un café en cafecito.app](https://cdn.cafecito.app/imgs/buttons/button_6.svg)](https://cafecito.app/gsebastianlopezillia)
 </div>
 
 ---
@@ -103,6 +105,17 @@ Game 3D models come fused as a single complex block. This option splits the mode
 
 ### 4. Explode View & Generate
 Use the **Explode View** slider to see how the pieces fit together. You can uncheck parts you don't want to print in the list (like weapons/bombs). Once ready, click **Generate Parts** to slice the model and download the `.obj` files.
+
+---
+
+## ☕ Support the Project
+
+Developing and maintaining this tool takes countless hours of reverse-engineering game files, writing custom parsers, and testing 3D slicing layouts. If this manager saved you time, made your modeling workflow easier, or helped you print your favorite vehicle, please consider supporting my work!
+
+* **For international users**: If you find this tool helpful, a star on GitHub or a shout-out is highly appreciated!
+* **For Argentine users (Cafecito)**: You can buy me a coffee to support the developer directly:
+  
+  [![Invitame un café en cafecito.app](https://cdn.cafecito.app/imgs/buttons/button_6.svg)](https://cafecito.app/gsebastianlopezillia)
 
 ---
 
@@ -208,6 +221,16 @@ Los modelos de juego vienen en un solo bloque complejo. Esta opción los divide 
 
 ### 4. Vista Explotada y Generar
 Usa el deslizador de **Vista Explotada** para ver cómo encajan las piezas. Puedes desmarcar las casillas en la lista para ocultar partes que no quieras imprimir (como bombas o cohetes). Al finalizar, haz clic en **Generar Piezas** para procesar el modelo y descargar los archivos `.obj`.
+
+---
+
+## ☕ Apoya el Proyecto (Cafecito)
+
+El desarrollo y mantenimiento de esta herramienta requiere de incontables horas invertidas en hacer ingeniería inversa de formatos propietarios del juego, programar los conversores 3D y diseñar y probar el despiece de los modelos.
+
+Si este gestor te ahorró horas de modelado en Blender, te facilitó el laminado de piezas o te ayudó a imprimir tu vehículo preferido de War Thunder, **¡invitame un Cafecito!** Tu aporte ayuda un montón a poder seguir mejorando la herramienta y sumar soporte para nuevos vehículos:
+
+[![Invitame un café en cafecito.app](https://cdn.cafecito.app/imgs/buttons/button_6.svg)](https://cafecito.app/gsebastianlopezillia)
 
 ---
 
